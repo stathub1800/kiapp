@@ -7,6 +7,8 @@
     --text-primary: #1A1A2E;
     --text-muted: #6B7280;
     --danger: #EF4444;
+    --success: #10B981; /* INI YANG BARU DITAMBAHKAN */
+    --warning: #F59E0B; /* INI YANG BARU DITAMBAHKAN */
 }
 
 body {

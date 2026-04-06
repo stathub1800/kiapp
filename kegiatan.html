@@ -18,22 +18,31 @@
     </div>
 
     <div class="container">
+        
         <div class="card">
             <h3 id="formTitle">Tambah Kegiatan Baru</h3>
             <form id="formKegiatan">
                 <label for="nama_kegiatan">Nama Kegiatan</label>
                 <input type="text" id="nama_kegiatan" required placeholder="Contoh: Rapat Koordinasi SBR">
 
-                <label for="waktu_pelaksanaan">Waktu Pelaksanaan</label>
-                <input type="date" id="waktu_pelaksanaan" required>
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="waktu_pelaksanaan">Tanggal Mulai</label>
+                        <input type="date" id="waktu_pelaksanaan" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="waktu_selesai">Tanggal Selesai</label>
+                        <input type="date" id="waktu_selesai" required>
+                    </div>
+                </div>
 
                 <label for="rencana_kerja">Rencana Kerja KIPAPP</label>
                 <select id="rencana_kerja" required>
                     <option value="">-- Pilih Rencana Kerja --</option>
                 </select>
 
-                <label for="deskripsi">Deskripsi</label>
-                <textarea id="deskripsi" rows="4" placeholder="Jelaskan detail kegiatan..."></textarea>
+                <label for="deskripsi">Deskripsi Laporan (Persiapan s.d. Evaluasi)</label>
+                <textarea id="deskripsi" rows="6" placeholder="Ceritakan progres kegiatan dari persiapan, pelaksanaan, hingga evaluasi akhir..."></textarea>
 
                 <button type="submit" class="btn-primary" id="btnSimpanKegiatan">Simpan Kegiatan</button>
             </form>
@@ -41,32 +50,43 @@
 
         <div class="card" id="panelBuktiDukung" style="display: none;">
             <h3>Bukti Dukung</h3>
-            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
-                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.png,.pdf,.docx,.xlsx">
-                <button class="btn-primary" onclick="document.getElementById('fileInput').click()" style="background-color: var(--secondary);">
-                    + Pilih File (Maks 20MB)
-                </button>
-                <p id="uploadStatus" style="font-size: 14px; color: var(--text-muted); margin-top: 10px;"></p>
+            <div style="border: 2px dashed #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; background-color: #fafafa;">
+                
+                <label for="penjelasanFile" style="font-weight: bold; display: block; margin-bottom: 5px;">Penjelasan Dokumen</label>
+                <input type="text" id="penjelasanFile" placeholder="Misal: Surat Instruksi Sestama, Daftar Hadir, dll..." style="margin-bottom: 15px;">
+
+                <div style="text-align: center;">
+                    <input type="file" id="fileInput" style="display: none;" accept=".jpg,.png,.pdf,.docx,.xlsx">
+                    <button class="btn-primary" onclick="document.getElementById('fileInput').click()" style="background-color: var(--secondary); width: 100%;">
+                        + Pilih & Unggah File (Maks 20MB)
+                    </button>
+                    <p id="uploadStatus" style="font-size: 14px; color: var(--text-muted); margin-top: 10px;">Isi penjelasan terlebih dahulu, lalu klik tombol di atas untuk memilih file.</p>
+                </div>
             </div>
 
             <div id="listBuktiDukung">
-            </div>
-        </div> <div class="card" id="panelShare" style="display: none; margin-top: 20px; border-left: 4px solid var(--success);">
+                </div>
+        </div> 
+
+        <div class="card" id="panelShare" style="display: none; margin-top: 20px; border-left: 4px solid var(--success);">
             <h3>Bagikan Laporan (Viewer)</h3>
             <p style="color: var(--text-muted); font-size: 14px;">Buat link unik untuk membagikan laporan ini ke pimpinan secara Read-Only.</p>
-            <button id="btnGenerateLink" class="btn-primary" style="background-color: var(--success);">Generate Share Link</button>
+            
+            <button id="btnGenerateLink" class="btn-primary" style="background-color: var(--success); border: none; padding: 10px 15px; color: white; cursor: pointer; border-radius: 4px; font-weight: bold;">Generate Share Link</button>
             
             <div id="shareLinkContainer" style="display: none; margin-top: 15px;">
-                <input type="text" id="shareLinkUrl" readonly style="background: #eef2f3; font-weight: bold; cursor: copy;" onclick="this.select(); document.execCommand('copy'); alert('Link disalin!');">
-                <p style="font-size: 12px; color: var(--text-muted);">Klik link di atas untuk menyalin, atau <a href="#" id="openShareLink" target="_blank">buka di tab baru</a>.</p>
+                <input type="text" id="shareLinkUrl" readonly style="width: 100%; padding: 10px; background: #eef2f3; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: copy;" onclick="this.select(); document.execCommand('copy'); alert('Link disalin!');">
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">Klik link di atas untuk menyalin, atau <a href="#" id="openShareLink" target="_blank" style="color: var(--secondary);">buka di tab baru</a>.</p>
             </div>
         </div>
 
-    </div> <script src="js/config.js"></script>
+    </div> 
+
+    <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/kegiatan.js"></script>
     <script src="js/bukti.js"></script>
-    <script src="js/share.js"></script> 
+    <script src="js/share.js"></script>
 </body>
 </html>
