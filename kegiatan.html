@@ -30,7 +30,7 @@
                 <label for="rencana_kerja">Rencana Kerja KIPAPP</label>
                 <select id="rencana_kerja" required>
                     <option value="">-- Pilih Rencana Kerja --</option>
-                    </select>
+                </select>
 
                 <label for="deskripsi">Deskripsi</label>
                 <textarea id="deskripsi" rows="4" placeholder="Jelaskan detail kegiatan..."></textarea>
@@ -50,8 +50,8 @@
             </div>
 
             <div id="listBuktiDukung">
-                </div>
-        <div class="card" id="panelShare" style="display: none; margin-top: 20px; border-left: 4px solid var(--success);">
+            </div>
+        </div> <div class="card" id="panelShare" style="display: none; margin-top: 20px; border-left: 4px solid var(--success);">
             <h3>Bagikan Laporan (Viewer)</h3>
             <p style="color: var(--text-muted); font-size: 14px;">Buat link unik untuk membagikan laporan ini ke pimpinan secara Read-Only.</p>
             <button id="btnGenerateLink" class="btn-primary" style="background-color: var(--success);">Generate Share Link</button>
@@ -61,10 +61,12 @@
                 <p style="font-size: 12px; color: var(--text-muted);">Klik link di atas untuk menyalin, atau <a href="#" id="openShareLink" target="_blank">buka di tab baru</a>.</p>
             </div>
         </div>
+
     </div> <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/kegiatan.js"></script>
     <script src="js/bukti.js"></script>
-    <script src="js/share.js"></script> </body>
+    <script src="js/share.js"></script> 
+</body>
 </html>
