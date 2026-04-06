@@ -24,7 +24,7 @@ async function loadTriwulan() {
         html += `
             <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
                 <span><strong>${item.nama}</strong> - Tahun ${item.tahun}</span>
-                <a href="kegiatan.html?triwulan_id=${item.id}" style="color: var(--secondary); text-decoration: none;">Lihat Kegiatan &rarr;</a>
+                <a href="triwulan.html?id=${item.id}" style="color: var(--secondary); text-decoration: none;">Lihat Kegiatan &rarr;</a>
             </li>
         `;
     });

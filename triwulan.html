@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Kegiatan - Laporan KPI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div style="background-color: var(--primary); color: white; padding: 15px;">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
+            <h2 style="margin: 0;">
+                <a href="dashboard.html" style="color: white; text-decoration: none;">&larr; Dashboard</a> | Daftar Kegiatan
+            </h2>
+            <button id="btnTambahKegiatan" class="btn-primary" style="background-color: var(--success); border: 1px solid white;">+ Tambah Kegiatan</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3 id="triwulanTitle">Memuat data...</h3>
+            <div id="kegiatanTableContainer" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                            <th style="padding: 12px;">Tanggal</th>
+                            <th style="padding: 12px;">Nama Kegiatan</th>
+                            <th style="padding: 12px;">Rencana Kerja</th>
+                            <th style="padding: 12px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kegiatanListBody">
+                        </tbody>
+                </table>
+            </div>
+            <p id="emptyMessage" style="display: none; text-align: center; color: var(--text-muted); padding: 20px;">Belum ada kegiatan untuk triwulan ini.</p>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/triwulan.js"></script>
+</body>
+</html>
