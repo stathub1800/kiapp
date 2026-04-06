@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Kegiatan - Laporan KPI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div style="background-color: var(--primary); color: white; padding: 15px;">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
+            <h2 style="margin: 0;">
+                <a href="dashboard.html" style="color: white; text-decoration: none;">&larr; Kembali</a> | Form Kegiatan
+            </h2>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3 id="formTitle">Tambah Kegiatan Baru</h3>
+            <form id="formKegiatan">
+                <label for="nama_kegiatan">Nama Kegiatan</label>
+                <input type="text" id="nama_kegiatan" required placeholder="Contoh: Rapat Koordinasi SBR">
+
+                <label for="waktu_pelaksanaan">Waktu Pelaksanaan</label>
+                <input type="date" id="waktu_pelaksanaan" required>
+
+                <label for="rencana_kerja">Rencana Kerja KIPAPP</label>
+                <select id="rencana_kerja" required>
+                    <option value="">-- Pilih Rencana Kerja --</option>
+                    </select>
+
+                <label for="deskripsi">Deskripsi</label>
+                <textarea id="deskripsi" rows="4" placeholder="Jelaskan detail kegiatan..."></textarea>
+
+                <button type="submit" class="btn-primary" id="btnSimpanKegiatan">Simpan Kegiatan</button>
+            </form>
+        </div>
+
+        <div class="card" id="panelBuktiDukung" style="display: none;">
+            <h3>Bukti Dukung</h3>
+            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;">
+                <input type="file" id="fileInput" style="display: none;" accept=".jpg,.png,.pdf,.docx,.xlsx">
+                <button class="btn-primary" onclick="document.getElementById('fileInput').click()" style="background-color: var(--secondary);">
+                    + Pilih File (Maks 20MB)
+                </button>
+                <p id="uploadStatus" style="font-size: 14px; color: var(--text-muted); margin-top: 10px;"></p>
+            </div>
+
+            <div id="listBuktiDukung">
+                </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/kegiatan.js"></script>
+    <script src="js/bukti.js"></script>
+</body>
+</html>
