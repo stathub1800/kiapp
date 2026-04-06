@@ -1,0 +1,2 @@
+const SUPABASE_URL = 'https://mpkkzlgidkgrypzalvpr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wa2t6bGdpZGtncnlwemFsdnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDg5NDIsImV4cCI6MjA5MTAyNDk0Mn0.iND6MgkXVJjDLZnDgTElXk0gh9GigF6cwrRHELLd2vM';
