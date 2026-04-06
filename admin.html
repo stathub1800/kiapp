@@ -27,7 +27,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Alpine.js untuk Logika UI -->
+    
+    <!-- Alpine.js untuk Logika UI (KATA 'defer' SANGAT PENTING AGAR TIDAK BLANK) -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
@@ -354,18 +355,12 @@
     </main>
 
     <script>
-        // =====================================================================
-        // PASTE KREDENSIAL SUPABASE ANDA DI BAWAH INI
-        // Dapatkan dari: Supabase Dashboard -> Project Settings -> API
-        // =====================================================================
+        // API KEY SUPABASE ANDA
         const SUPABASE_URL = 'https://mpkkzlgidkgrypzalvpr.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wa2t6bGdpZGtncnlwemFsdnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDg5NDIsImV4cCI6MjA5MTAyNDk0Mn0.iND6MgkXVJjDLZnDgTElXk0gh9GigF6cwrRHELLd2vM';
-        // =====================================================================
-
-        // Mengubah nama variabel dari 'supabase' menjadi 'supabaseClient' agar tidak bentrok dengan variabel CDN
+        
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Mendaftarkan komponen menggunakan Alpine.data pada saat inisialisasi
         document.addEventListener('alpine:init', () => {
             Alpine.data('kpiApp', () => ({
                 session: null,
@@ -388,7 +383,6 @@
                 selectedFile: null,
 
                 async initApp() {
-                    // Cek parameter URL untuk melihat apakah ini mode Viewer (Pimpinan)
                     const urlParams = new URLSearchParams(window.location.search);
                     const viewSlug = urlParams.get('view');
                     
@@ -399,7 +393,6 @@
                         return;
                     }
 
-                    // Jika bukan viewer, cek sesi Admin
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     this.session = session;
                     
@@ -462,7 +455,6 @@
                 handleFileUpload(event) {
                     const file = event.target.files[0];
                     if(file) {
-                        // Validasi ukuran (contoh: maks 5MB)
                         if(file.size > 5 * 1024 * 1024) {
                             alert("Ukuran file terlalu besar! Maksimal 5MB.");
                             event.target.value = '';
@@ -492,7 +484,6 @@
                     this.saving = true;
 
                     try {
-                        // 1. Upload File ke Storage Bucket Supabase 'kpi_bukti'
                         const fileExt = this.selectedFile.name.split('.').pop();
                         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
                         
@@ -505,12 +496,10 @@
 
                         if (uploadError) throw new Error("Gagal mengunggah file: " + uploadError.message);
 
-                        // 2. Dapatkan URL Publik
                         const { data: { publicUrl } } = supabaseClient.storage
                             .from('kpi_bukti')
                             .getPublicUrl(fileName);
 
-                        // 3. Simpan data ke Database
                         const slug = this.generateSlug();
                         const reportData = {
                             user_id: this.session.user.id,
@@ -533,12 +522,10 @@
                         alert('Laporan berhasil disimpan!');
                         this.currentPage = 'dashboard';
                         
-                        // Reset Form
                         this.form = { nama_kegiatan: '', waktu: '', rencana_kerja: '', deskripsi: '', bukti_desc: '', triwulan: '1' };
                         this.selectedFile = null;
                         document.querySelector('input[type="file"]').value = '';
                         
-                        // Refresh data
                         await this.fetchReports();
 
                     } catch (error) {
@@ -550,10 +537,6 @@
 
                 async deleteReport(id) {
                     if(confirm('PERINGATAN: Apakah Anda yakin ingin menghapus laporan ini secara permanen?')) {
-                        
-                        // Opsional: Anda juga bisa menulis logika untuk menghapus file di Storage di sini,
-                        // tetapi untuk keamanan dan kesederhanaan, kita hapus row databasenya saja dulu.
-                        
                         const { error } = await supabaseClient.from('kpi_reports').delete().eq('id', id);
                         if(error) {
                             alert("Gagal menghapus: " + error.message);
@@ -564,7 +547,6 @@
                 },
 
                 copyLink(slug) {
-                    // Membuat URL lengkap
                     const url = new URL(window.location.href);
                     url.search = '?view=' + slug;
                     
@@ -577,16 +559,14 @@
 
                 exportToPDF() {
                     const element = document.getElementById('pdf-content');
-                    // Menyembunyikan class html2pdf__page-break sementara jika diperlukan
                     const opt = {
-                        margin:       [10, 10, 10, 10], // top, left, bottom, right
+                        margin:       [10, 10, 10, 10], 
                         filename:     `Laporan-KPI-${this.viewData.nama_kegiatan.replace(/\s+/g, '-')}.pdf`,
                         image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true, logging: true }, // useCORS penting untuk gambar eksternal
+                        html2canvas:  { scale: 2, useCORS: true, logging: true }, 
                         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                     };
                     
-                    // Indikasi loading (opsional)
                     const btn = event.currentTarget;
                     const originalText = btn.innerHTML;
                     btn.innerHTML = 'Memproses PDF...';
