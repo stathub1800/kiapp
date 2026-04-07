@@ -67,16 +67,22 @@ async function loadKanban() {
     const { data, error } = await supabase.from('kegiatan').select('id, nama_kegiatan, status').order('created_at', { ascending: false });
     if (error || !data) return;
 
-    // Kosongkan kolom terlebih dahulu
-    document.getElementById('col-Persiapan').innerHTML = '';
-    document.getElementById('col-Pelaksanaan').innerHTML = '';
-    document.getElementById('col-Evaluasi').innerHTML = '';
-    document.getElementById('col-Selesai').innerHTML = '';
+    // List semua status yang ada
+    const statuses = ['Persiapan', 'Pelaksanaan', 'Pelaporan', 'Monitoring dan Evaluasi', 'Selesai'];
+    
+    // Bersihkan semua kolom
+    statuses.forEach(s => {
+        const id = s.replace(/\s/g, ''); // Hilangkan spasi untuk mencari ID elemen
+        const el = document.getElementById(`col-${id}`);
+        if(el) el.innerHTML = '';
+    });
 
     // Masukkan kartu ke kolom masing-masing
     data.forEach(keg => {
-        const status = keg.status || 'Persiapan'; // Default jika kosong
-        const col = document.getElementById(`col-${status}`);
+        const currentStatus = keg.status || 'Persiapan';
+        const targetId = currentStatus.replace(/\s/g, ''); // Misal: "Monitoring dan Evaluasi" -> "MonitoringdanEvaluasi"
+        const col = document.getElementById(`col-${targetId}`);
+        
         if(col) {
             col.innerHTML += `
                 <div class="kanban-card" data-id="${keg.id}">
@@ -87,24 +93,28 @@ async function loadKanban() {
         }
     });
 
-    // Inisialisasi Drag-and-Drop (SortableJS) untuk ke-4 kolom
-    const statuses = ['Persiapan', 'Pelaksanaan', 'Evaluasi', 'Selesai'];
-    statuses.forEach(status => {
-        new Sortable(document.getElementById(`col-${status}`), {
-            group: 'shared', // Mengizinkan tarik-lepas antar kolom
-            animation: 150,
-            onEnd: async function (evt) {
-                const itemEl = evt.item;  // Kartu yang ditarik
-                const newStatus = evt.to.parentElement.parentElement.getAttribute('data-status'); // Kolom tujuan
-                const kegiatanId = itemEl.getAttribute('data-id');
+    // Inisialisasi Drag-and-Drop untuk setiap kolom
+    statuses.forEach(s => {
+        const id = s.replace(/\s/g, '');
+        const targetEl = document.getElementById(`col-${id}`);
+        
+        if(targetEl) {
+            new Sortable(targetEl, {
+                group: 'shared',
+                animation: 150,
+                onEnd: async function (evt) {
+                    const itemEl = evt.item;
+                    // Ambil status asli dari data-status di elemen induknya (kanban-col)
+                    const newStatus = evt.to.closest('.kanban-col').getAttribute('data-status');
+                    const kegiatanId = itemEl.getAttribute('data-id');
 
-                // Update status di database Supabase secara diam-diam!
-                await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
-            },
-        });
+                    // Update ke database
+                    await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
+                },
+            });
+        }
     });
 }
-
 // ==========================================
 // 4. MODUL KALENDER (FullCalendar)
 // ==========================================
