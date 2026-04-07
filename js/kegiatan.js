@@ -28,7 +28,8 @@ async function loadKegiatanDetail() {
         document.getElementById('waktu_selesai').value = data.waktu_selesai || data.waktu_pelaksanaan; // Load tanggal selesai
         document.getElementById('rencana_kerja').value = data.rencana_kerja_kipapp;
         document.getElementById('deskripsi').value = data.deskripsi;
-        
+        document.getElementById('status').value = data.status || 'Persiapan';
+        document.getElementById('daftar_pertanyaan').value = data.daftar_pertanyaan || '';
         document.getElementById('panelBuktiDukung').style.display = 'block';
     }
 }
@@ -45,7 +46,9 @@ document.getElementById('formKegiatan').addEventListener('submit', async (e) => 
         waktu_pelaksanaan: document.getElementById('waktu_pelaksanaan').value,
         waktu_selesai: document.getElementById('waktu_selesai').value, 
         rencana_kerja_kipapp: document.getElementById('rencana_kerja').value,
-        deskripsi: document.getElementById('deskripsi').value
+        deskripsi: document.getElementById('deskripsi').value,
+        status: document.getElementById('status').value,
+        daftar_pertanyaan: document.getElementById('daftar_pertanyaan').value
     };
 
     let result;

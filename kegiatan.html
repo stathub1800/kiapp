@@ -41,6 +41,20 @@
                     <option value="">-- Pilih Rencana Kerja --</option>
                 </select>
 
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label for="status">Status Kegiatan</label>
+                        <select id="status" required>
+                            <option value="Persiapan">Persiapan</option>
+                            <option value="Pelaksanaan">Pelaksanaan</option>
+                            <option value="Evaluasi">Evaluasi</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label for="daftar_pertanyaan">Daftar Pertanyaan / Catatan Khusus (Opsional)</label>
+                <textarea id="daftar_pertanyaan" rows="3" placeholder="Contoh: 1. Apakah sampel sudah lengkap? 2. Kendala di lapangan..."></textarea>
                 <label for="deskripsi">Deskripsi Laporan (Persiapan s.d. Evaluasi)</label>
                 <textarea id="deskripsi" rows="6" placeholder="Ceritakan progres kegiatan dari persiapan, pelaksanaan, hingga evaluasi akhir..."></textarea>
 

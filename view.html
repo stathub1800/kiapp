@@ -3,75 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewer Dokumen - KPI</title>
+    <title>Laporan Kegiatan - Viewer</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        .watermark { background-color: var(--secondary); color: white; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 20px; }
-    </style>
 </head>
-<body>
+<body style="background-color: #cbd5e1;"> <div class="no-print" style="background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;">
+        <strong>Mode Viewer</strong> - Tampilan Resmi Laporan. <button onclick="window.print()" class="btn-primary" style="margin-left: 20px; background: white; color: var(--primary);">Cetak / Export PDF</button>
+    </div>
 
-    <div class="watermark">BUKTI DUKUNG KPI – HANYA LIHAT</div>
-
-    <div class="container" id="viewerContent">
-        <div style="text-align: center; padding: 50px;">Memuat dokumen... mohon tunggu.</div>
+    <div class="page-a4" id="viewerContent">
+        <div style="text-align: center; padding: 50px;">Memuat dokumen resmi...</div>
     </div>
 
     <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script>
-        // Logika Pengambilan Data Berdasarkan Token
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
         const viewerContent = document.getElementById('viewerContent');
 
         async function loadViewerData() {
-            if (!token) {
-                viewerContent.innerHTML = `<div class="card" style="text-align:center; color: var(--danger);"><h3>Token tidak valid atau tidak ditemukan.</h3></div>`;
-                return;
-            }
+            if (!token) return;
 
-            // Cari kegiatan berdasarkan share_token
-            const { data: kegiatanData, error: kegiatanError } = await supabase
-                .from('kegiatan').select('*').eq('share_token', token).single();
+            const { data: kegiatanData } = await supabase.from('kegiatan').select('*').eq('share_token', token).single();
+            if (!kegiatanData) { viewerContent.innerHTML = `<h3>Laporan tidak ditemukan.</h3>`; return; }
 
-            if (kegiatanError || !kegiatanData) {
-                viewerContent.innerHTML = `<div class="card" style="text-align:center; color: var(--danger);"><h3>Laporan tidak ditemukan / Link sudah kadaluarsa.</h3></div>`;
-                return;
-            }
+            const { data: buktiData } = await supabase.from('bukti_dukung').select('*').eq('kegiatan_id', kegiatanData.id).order('created_at', { ascending: true });
 
-            // Ambil Bukti Dukung
-            const { data: buktiData } = await supabase
-                .from('bukti_dukung').select('*').eq('kegiatan_id', kegiatanData.id).order('created_at', { ascending: true });
-
-            // Susun Tampilan UI
+            // HEADER DOKUMEN RESMI
             let html = `
-                <div class="card" style="border-top: 4px solid var(--primary);">
-                    <h2 style="margin-top: 0; color: var(--primary);">${kegiatanData.nama_kegiatan}</h2>
-                    <p><strong>Waktu Pelaksanaan:</strong> ${kegiatanData.waktu_pelaksanaan}</p>
-                    <p><strong>Rencana Kerja:</strong> ${kegiatanData.rencana_kerja_kipapp}</p>
-                    <p><strong>Deskripsi:</strong><br>${kegiatanData.deskripsi || '-'}</p>
+                <div style="border-bottom: 3px solid black; padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">LAPORAN PELAKSANAAN KEGIATAN</h1>
+                    <h2 style="margin: 5px 0 0 0; font-size: 18px; color: var(--text-muted);">${kegiatanData.nama_kegiatan}</h2>
                 </div>
-                <h3 style="margin-top: 30px;">Dokumen Bukti Dukung</h3>
+
+                <table style="width: 100%; margin-bottom: 30px; border-collapse: collapse; font-size: 15px;">
+                    <tr><td style="width: 200px; padding: 8px 0; font-weight: bold;">Rencana Kerja</td><td style="padding: 8px 0;">: ${kegiatanData.rencana_kerja_kipapp}</td></tr>
+                    <tr><td style="padding: 8px 0; font-weight: bold;">Periode Pelaksanaan</td><td style="padding: 8px 0;">: ${kegiatanData.waktu_pelaksanaan} s.d ${kegiatanData.waktu_selesai}</td></tr>
+                    <tr><td style="padding: 8px 0; font-weight: bold;">Status Terakhir</td><td style="padding: 8px 0;">: <span style="background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${kegiatanData.status || 'Selesai'}</span></td></tr>
+                </table>
+
+                <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px;">A. Deskripsi Kegiatan</h3>
+                <p style="text-align: justify; line-height: 1.8; white-space: pre-wrap;">${kegiatanData.deskripsi || '-'}</p>
             `;
 
+            // DAFTAR PERTANYAAN (Hanya muncul jika diisi)
+            if (kegiatanData.daftar_pertanyaan) {
+                html += `
+                    <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">B. Daftar Pertanyaan / Catatan Evaluasi</h3>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid var(--warning); white-space: pre-wrap;">${kegiatanData.daftar_pertanyaan}</div>
+                `;
+            }
+
+            // BUKTI DUKUNG
+            html += `<h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">${kegiatanData.daftar_pertanyaan ? 'C' : 'B'}. Lampiran Bukti Dukung</h3>`;
+            
             if (!buktiData || buktiData.length === 0) {
-                html += `<div class="card"><p>Tidak ada dokumen yang dilampirkan pada laporan ini.</p></div>`;
+                html += `<p><i>Tidak ada lampiran dokumen.</i></p>`;
             } else {
                 buktiData.forEach((file, index) => {
                     let preview = '';
                     if (file.file_type && file.file_type.includes('image')) {
-                        preview = `<img src="${file.file_url}" style="max-width: 100%; border-radius: 8px; margin-top: 15px;">`;
-                    } else if (file.file_type === 'application/pdf') {
-                        preview = `<iframe src="${file.file_url}" width="100%" height="500px" style="border:1px solid #ccc; border-radius: 8px; margin-top: 15px;"></iframe>`;
+                        preview = `<img src="${file.file_url}" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px;">`;
                     } else {
-                        preview = `<a href="${file.file_url}" target="_blank" class="btn-primary" style="display: inline-block; margin-top: 15px; text-decoration: none;">Unduh ${file.file_name}</a>`;
+                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Buka Dokumen PDF/Excel</a>`;
                     }
 
                     html += `
-                        <div class="card" style="margin-bottom: 20px;">
-                            <div style="background: var(--background); padding: 10px; border-radius: 4px;"><strong>Lampiran ${index + 1}:</strong> ${file.file_name}</div>
+                        <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                            <div style="font-weight: bold; background: #e2e8f0; padding: 8px 15px;">Lampiran ${index + 1}: ${file.penjelasan || file.file_name}</div>
                             ${preview}
                         </div>
                     `;
@@ -79,7 +79,6 @@
             }
             viewerContent.innerHTML = html;
         }
-
         document.addEventListener('DOMContentLoaded', loadViewerData);
     </script>
 </body>

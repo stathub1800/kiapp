@@ -1,61 +1,92 @@
-/* Palet Warna sesuai SDD */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
 :root {
-    --primary: #1E3A5F;
-    --secondary: #2E5FA3;
-    --background: #F5F7FA;
-    --card: #FFFFFF;
-    --text-primary: #1A1A2E;
-    --text-muted: #6B7280;
-    --danger: #EF4444;
-    --success: #10B981; /* INI YANG BARU DITAMBAHKAN */
-    --warning: #F59E0B; /* INI YANG BARU DITAMBAHKAN */
+    --primary: #1E3A8A; /* Biru korporat yang lebih tegas */
+    --primary-hover: #1e40af;
+    --secondary: #3b82f6;
+    --background: #f1f5f9; /* Abu-abu sangat lembut */
+    --surface: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 8px;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: var(--background);
-    color: var(--text-primary);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    color: var(--text-main);
+    margin: 0; padding: 0;
+    line-height: 1.5;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    width: 100%;
-    box-sizing: border-box;
-}
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
+/* Tampilan Card Modern */
 .card {
-    background-color: var(--card);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    padding: 20px;
-    margin-bottom: 20px;
+    background-color: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
 }
 
+/* Tombol Profesional */
 .btn-primary {
     background-color: var(--primary);
     color: white;
     border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
+    padding: 10px 16px;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    text-align: center;
 }
+.btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
 
-.btn-primary:hover { background-color: var(--secondary); }
-
-/* Form Styles */
+/* Form Input yang Bersih */
+label { font-weight: 600; font-size: 14px; color: var(--text-main); display: block; margin-bottom: 6px; }
 input, select, textarea {
     width: 100%;
-    padding: 10px;
-    margin: 8px 0 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+    transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--secondary); background-color: #fff; }
+
+/* --- KANBAN BOARD STYLES --- */
+.kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; }
+.kanban-col { flex: 1; min-width: 250px; background: #f8fafc; padding: 15px; border-radius: var(--radius); border: 1px solid var(--border); }
+.kanban-col h4 { margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid var(--border); color: var(--primary); }
+.kanban-card { background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border-left: 4px solid var(--secondary); cursor: pointer; transition: transform 0.2s; }
+.kanban-card:hover { transform: translateY(-3px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.kanban-card h5 { margin: 0 0 10px 0; font-size: 15px; }
+
+/* --- A4 PAPER VIEWER STYLES --- */
+.page-a4 {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 40px auto;
+    padding: 20mm;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    border-radius: 4px;
+}
+@media print {
+    body { background: white; }
+    .page-a4 { margin: 0; box-shadow: none; width: 100%; padding: 0; }
+    .no-print { display: none !important; }
 }
