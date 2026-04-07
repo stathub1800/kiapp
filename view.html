@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kegiatan - Viewer</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .print-only { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body style="background-color: #cbd5e1;"> <div class="no-print" style="background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;">
@@ -64,9 +71,20 @@
                 buktiData.forEach((file, index) => {
                     let preview = '';
                     if (file.file_type && file.file_type.includes('image')) {
-                        preview = `<img src="${file.file_url}" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px;">`;
+                        // Jika Gambar
+                        preview = `<img src="${file.file_url}" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px; border-radius: 4px;">`;
+                    } else if (file.file_type === 'application/pdf' || file.file_name.toLowerCase().endsWith('.pdf')) {
+                        // Jika PDF: Tampilkan Iframe untuk Viewer di layar, tapi sembunyikan saat dicetak
+                        preview = `
+                            <iframe src="${file.file_url}" width="100%" height="600px" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 15px;" class="no-print"></iframe>
+                            <div class="no-print" style="margin-top: 10px;">
+                                <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka PDF di Tab Baru (Full Screen)</a>
+                            </div>
+                            <p style="display: none;" class="print-only"><i>(Dokumen PDF terlampir pada sistem)</i></p>
+                        `;
                     } else {
-                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Buka Dokumen PDF/Excel</a>`;
+                        // Jika Excel / Word / Lainnya
+                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Download Dokumen (${file.file_name.split('.').pop().toUpperCase()})</a>`;
                     }
 
                     html += `
