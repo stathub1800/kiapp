@@ -1,6 +1,9 @@
 // ==========================================
 // 1. LOGIKA TAB NAVIGASI
 // ==========================================
+// ==========================================
+// 1. LOGIKA TAB NAVIGASI
+// ==========================================
 function openTab(tabId, btnElement) {
     // Sembunyikan semua tab content
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -11,9 +14,12 @@ function openTab(tabId, btnElement) {
     document.getElementById(tabId).classList.add('active');
     btnElement.classList.add('active');
 
-    // Jika tab kalender dibuka, render ulang kalender agar ukurannya pas
+    // PERBAIKAN: Gunakan setTimeout dan updateSize()
     if(tabId === 'tab-kalender' && window.calendarAPI) {
-        window.calendarAPI.render();
+        // Beri jeda 100 milidetik agar tab benar-benar terbuka sebelum kalender menyesuaikan ukuran
+        setTimeout(() => {
+            window.calendarAPI.updateSize(); 
+        }, 100);
     }
 }
 
