@@ -1,5 +1,5 @@
 // PASTE URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI:
-const GOOGLE_APP_SCRIPT_URL = "PASTE_URL_WEB_APP_ANDA_DI_SINI";
+const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFkFGUCWqFP4wb8-3KWsXQDKMZXUquDOeZvUxgTV-fEaxjanTOMJpbBkZoGKa-28wdOQ/exec";
 
 const listContainer = document.getElementById('listBuktiDukung');
 
