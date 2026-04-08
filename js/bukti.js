@@ -1,197 +1,168 @@
 // ============================================================
-// KONFIGURASI URL GOOGLE APPS SCRIPT
+// KONFIGURASI
+// Ganti dengan URL folder Google Drive root kamu
 // ============================================================
-const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFkFGUCWqFP4wb8-3KWsXQDKMZXUquDOeZvUxgTV-fEaxjanTOMJpbBkZoGKa-28wdOQ/exec";
+const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1ArVY1k4bT1lQM60wHGQiJzYdOpmjb1s8";
 
 // ============================================================
 // AMBIL ELEMEN HTML
 // ============================================================
 const listContainer = document.getElementById('listBuktiDukung');
-
-// Elemen Opsi 1 (Sinkronisasi Drive)
-const driveDropdown   = document.getElementById('driveDropdown');
-const btnRefreshDrive = document.getElementById('btnRefreshDrive');
-const btnSimpanDrive  = document.getElementById('btnSimpanDrive');
-const penjelasanDrive = document.getElementById('penjelasanDrive');
-const driveStatus     = document.getElementById('driveStatus');
-const searchFile      = document.getElementById('searchFile');   // <-- BARU (opsional, bisa tidak ada)
-const cacheInfo       = document.getElementById('cacheInfo');    // <-- BARU (opsional, bisa tidak ada)
-
-// Elemen Opsi 2 (Link Manual)
-const btnSimpanLink = document.getElementById('btnSimpanLink');
-const namaLinkInput = document.getElementById('namaLink');
 const urlLinkInput  = document.getElementById('urlLink');
+const namaLinkInput = document.getElementById('namaLink');
+const btnSimpanLink = document.getElementById('btnSimpanLink');
 const linkStatus    = document.getElementById('linkStatus');
+const btnBukaDrive  = document.getElementById('btnBukaDrive');
+const previewNama   = document.getElementById('previewNama');
 
 // ============================================================
-// VARIABEL INTERNAL (jangan diubah)
-// ============================================================
-let allDriveFiles = []; // Menyimpan semua file untuk filter lokal tanpa fetch ulang
-
-// ============================================================
-// OPSI 1: TARIK DATA DARI GOOGLE DRIVE
+// UTILITAS
 // ============================================================
 
-// Fungsi untuk menentukan ikon berdasarkan tipe file
-function getIkon(mimeType) {
-    if (!mimeType) return '📄';
-    if (mimeType.includes('spreadsheet') || mimeType.includes('excel'))       return '📊';
-    if (mimeType.includes('document')    || mimeType.includes('word'))        return '📝';
-    if (mimeType.includes('presentation')|| mimeType.includes('powerpoint'))  return '📑';
-    if (mimeType.includes('pdf'))   return '📕';
-    if (mimeType.includes('image')) return '🖼️';
-    if (mimeType.includes('video')) return '🎥';
+// Ambil File ID dari berbagai format URL Google Drive
+function getFileIdFromUrl(url) {
+    if (!url) return null;
+    var match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    match = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    if (match) return match[1];
+    return null;
+}
+
+// Deteksi ikon berdasarkan URL / nama file
+function getIkon(url, nama) {
+    const str = (url + ' ' + nama).toLowerCase();
+    if (str.includes('spreadsheet') || str.includes('xlsx') || str.includes('sheet')) return '📊';
+    if (str.includes('document')    || str.includes('docx') || str.includes('doc'))   return '📝';
+    if (str.includes('presentation')|| str.includes('pptx') || str.includes('slide')) return '📑';
+    if (str.includes('pdf'))    return '📕';
+    if (str.includes('image')   || str.includes('jpg') || str.includes('png')) return '🖼️';
+    if (str.includes('video')   || str.includes('mp4')) return '🎥';
+    if (str.includes('form'))   return '📋';
+    if (str.includes('folder')) return '📁';
     return '📄';
 }
 
-// Fungsi untuk render ulang dropdown dari array (dipakai juga saat filter)
-function renderDropdown(files) {
-    if (!driveDropdown) return;
-    driveDropdown.innerHTML = '<option value="">-- Pilih Dokumen (Terbaru di atas) --</option>';
+// Buat URL thumbnail dari file ID
+function getThumbnailUrl(fileId) {
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w100`;
+}
 
-    if (files.length === 0) {
-        driveDropdown.innerHTML = '<option value="">Tidak ada file yang cocok.</option>';
-        return;
+// Ubah URL edit/view menjadi URL sharing yang bisa dibuka siapa saja
+function makeShareableUrl(url) {
+    if (!url) return url;
+    if (url.includes('usp=sharing')) return url;
+    const fileId = getFileIdFromUrl(url);
+    if (fileId && url.includes('/file/d/')) {
+        return `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
     }
+    return url;
+}
 
-    files.forEach(file => {
-        const option = document.createElement('option');
-        option.value = file.url;
+// ============================================================
+// AUTO-DETECT SAAT URL DI-PASTE
+// ============================================================
+if (urlLinkInput) {
+    urlLinkInput.addEventListener('paste', function() {
+        setTimeout(() => {
+            const url = urlLinkInput.value.trim();
+            if (!url) return;
 
-        const d = new Date(file.date);
-        const dateStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-        const ikon = getIkon(file.mimeType);
+            const fileId = getFileIdFromUrl(url);
 
-        option.textContent = `${ikon} [${dateStr}] ${file.name}`;
-        driveDropdown.appendChild(option);
+            // Tampilkan preview deteksi
+            if (previewNama) {
+                if (fileId) {
+                    previewNama.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px; padding:8px;
+                                    background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; margin-top:8px;">
+                            <img src="${getThumbnailUrl(fileId)}"
+                                 style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #ddd;"
+                                 onerror="this.style.display='none'">
+                            <div>
+                                <div style="font-size:12px; color:#15803d; font-weight:bold;">✓ Link Google Drive terdeteksi</div>
+                                <div style="font-size:11px; color:#6b7280;">File ID: ${fileId}</div>
+                            </div>
+                        </div>`;
+                } else {
+                    previewNama.innerHTML = `
+                        <div style="padding:8px; background:#fefce8; border:1px solid #fde68a;
+                                    border-radius:6px; margin-top:8px; font-size:12px; color:#92400e;">
+                            ⚠️ Link ini bukan dari Google Drive. Tetap bisa disimpan.
+                        </div>`;
+                }
+            }
+
+            // Auto-isi nama jika kolom nama masih kosong
+            if (namaLinkInput && !namaLinkInput.value.trim()) {
+                if      (url.includes('spreadsheet'))  namaLinkInput.value = 'Google Spreadsheet';
+                else if (url.includes('document'))     namaLinkInput.value = 'Google Document';
+                else if (url.includes('presentation')) namaLinkInput.value = 'Google Slides';
+                else if (url.includes('forms'))        namaLinkInput.value = 'Google Form';
+                else if (url.includes('folder'))       namaLinkInput.value = 'Folder Drive';
+                else if (fileId)                       namaLinkInput.value = 'File Google Drive';
+            }
+        }, 100);
     });
-}
 
-// Fungsi utama fetch dari GAS
-// forceRefresh = true  → bypass cache GAS, ambil data terbaru dari Drive
-// forceRefresh = false → pakai cache GAS kalau masih ada (lebih cepat)
-async function fetchDriveFiles(forceRefresh = false) {
-    if (!driveDropdown) return;
-
-    driveDropdown.innerHTML = '<option value="">-- Menarik data dari Drive... --</option>';
-    if (btnRefreshDrive) btnRefreshDrive.disabled = true;
-
-    try {
-        const url = forceRefresh
-            ? GOOGLE_APP_SCRIPT_URL + "?action=refresh"
-            : GOOGLE_APP_SCRIPT_URL;
-
-        const response = await fetch(url);
-        const files = await response.json();
-
-        if (files.error) throw new Error(files.error);
-
-        allDriveFiles = files; // Simpan untuk keperluan filter lokal
-        renderDropdown(files);
-
-        // Tampilkan info waktu & jumlah file (jika elemen cacheInfo ada di HTML)
-        if (cacheInfo) {
-            cacheInfo.textContent = `${files.length} file dimuat · ${new Date().toLocaleTimeString('id-ID')}`;
-        }
-
-    } catch (error) {
-        driveDropdown.innerHTML = '<option value="">Gagal memuat folder Drive. Cek URL GAS.</option>';
-        console.error('fetchDriveFiles error:', error);
-    } finally {
-        if (btnRefreshDrive) btnRefreshDrive.disabled = false;
-    }
-}
-
-// Event: Tombol Refresh Manual → paksa bypass cache
-if (btnRefreshDrive) {
-    btnRefreshDrive.addEventListener('click', (e) => {
-        e.preventDefault();
-        fetchDriveFiles(true); // forceRefresh = true
-    });
-}
-
-// Event: Filter pencarian lokal (tidak fetch ulang ke server!)
-// Hanya aktif jika ada elemen <input id="searchFile"> di HTML
-if (searchFile) {
-    searchFile.addEventListener('input', (e) => {
-        const keyword = e.target.value.toLowerCase().trim();
-        const filtered = keyword
-            ? allDriveFiles.filter(f => f.name.toLowerCase().includes(keyword))
-            : allDriveFiles;
-        renderDropdown(filtered);
-    });
-}
-
-// Event: Tombol Simpan dari Dropdown
-if (btnSimpanDrive) {
-    btnSimpanDrive.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const url = driveDropdown.value;
-        const namaFileLengkap = driveDropdown.options[driveDropdown.selectedIndex].text;
-
-        if (!url) { alert("Pilih dokumen dari dropdown terlebih dahulu!"); return; }
-
-        // Bersihkan nama file dari embel-embel ikon, tanggal, dan spasi berlebih
-        // Contoh: "📊 [12/7 09:30] Laporan/Rekap.xlsx" → "Laporan/Rekap.xlsx"
-        const namaFileBersih = namaFileLengkap
-            .replace(/^[\S\s]*?\]\s/, '') // Hapus semua sebelum "] " (ikon + tanggal)
-            .trim();
-        const teksPenjelasan = penjelasanDrive.value.trim() || namaFileBersih;
-
-        driveStatus.innerText = "Melampirkan dokumen ke laporan...";
-        driveStatus.style.color = "";
-
-        const { error: dbError } = await supabase.from('bukti_dukung').insert([{
-            kegiatan_id: kegiatanId,
-            file_url:    url,
-            file_name:   namaFileBersih,
-            file_type:   'link',
-            penjelasan:  teksPenjelasan
-        }]);
-
-        if (dbError) {
-            driveStatus.innerText = "Gagal menyimpan: " + dbError.message;
-            driveStatus.style.color = "var(--danger)";
-        } else {
-            driveStatus.innerText = "Dokumen berhasil dilampirkan!";
-            driveStatus.style.color = "var(--success)";
-            penjelasanDrive.value = '';
-            loadDaftarBukti();
-            setTimeout(() => { driveStatus.innerText = ""; }, 3000);
+    // Bersihkan preview saat input dikosongkan
+    urlLinkInput.addEventListener('input', function() {
+        if (!urlLinkInput.value.trim() && previewNama) {
+            previewNama.innerHTML = '';
         }
     });
 }
 
 // ============================================================
-// OPSI 2: TAUTKAN LINK MANUAL
+// TOMBOL BUKA DRIVE — shortcut ke folder arsip
+// ============================================================
+if (btnBukaDrive) {
+    btnBukaDrive.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open(DRIVE_FOLDER_URL, '_blank');
+    });
+}
+
+// ============================================================
+// SIMPAN LAMPIRAN KE SUPABASE
 // ============================================================
 if (btnSimpanLink) {
     btnSimpanLink.addEventListener('click', async (e) => {
         e.preventDefault();
+
         const nama = namaLinkInput.value.trim();
         const url  = urlLinkInput.value.trim();
 
-        if (!nama || !url) { alert("Penjelasan Tautan dan URL wajib diisi!"); return; }
+        if (!nama) { alert("Isi kolom Nama / Penjelasan dokumen terlebih dahulu!"); return; }
+        if (!url)  { alert("Paste link dokumen terlebih dahulu!"); return; }
 
-        linkStatus.innerText = "Menyimpan tautan...";
+        try { new URL(url); } catch(_) { alert("Format URL tidak valid!"); return; }
+
+        linkStatus.innerText = "Menyimpan lampiran...";
         linkStatus.style.color = "";
+
+        const shareableUrl = makeShareableUrl(url);
+        const ikon         = getIkon(url, nama);
 
         const { error: dbError } = await supabase.from('bukti_dukung').insert([{
             kegiatan_id: kegiatanId,
-            file_url:    url,
-            file_name:   'Tautan Eksternal',
+            file_url:    shareableUrl,
+            file_name:   nama,
             file_type:   'link',
-            penjelasan:  nama
+            penjelasan:  ikon + ' ' + nama
         }]);
 
         if (dbError) {
             linkStatus.innerText = "Gagal menyimpan: " + dbError.message;
             linkStatus.style.color = "var(--danger)";
         } else {
-            linkStatus.innerText = "Tautan berhasil disimpan!";
+            linkStatus.innerText = "✓ Dokumen berhasil dilampirkan!";
             linkStatus.style.color = "var(--success)";
             namaLinkInput.value = '';
             urlLinkInput.value  = '';
+            if (previewNama) previewNama.innerHTML = '';
             loadDaftarBukti();
             setTimeout(() => { linkStatus.innerText = ""; }, 3000);
         }
@@ -199,7 +170,7 @@ if (btnSimpanLink) {
 }
 
 // ============================================================
-// RENDER DAFTAR BUKTI DUKUNG (dari Supabase)
+// RENDER DAFTAR BUKTI DUKUNG
 // ============================================================
 async function loadDaftarBukti() {
     if (!kegiatanId) return;
@@ -213,19 +184,26 @@ async function loadDaftarBukti() {
     if (error || !data) return;
 
     if (data.length === 0) {
-        listContainer.innerHTML = "<p style='text-align:center; color: var(--text-muted);'>Belum ada lampiran dokumen.</p>";
+        listContainer.innerHTML = `
+            <p style="text-align:center; color:var(--text-muted); padding:20px 0;">
+                Belum ada lampiran dokumen.
+            </p>`;
         return;
     }
 
     let html = '';
     data.forEach(file => {
-        const previewHtml = `
-            <div style="width:70px; height:70px; background:#e0f2fe; color:#0284c7;
-                        display:flex; align-items:center; justify-content:center;
-                        border-radius:4px; font-weight:bold; font-size:12px;
-                        border:1px solid #bae6fd; text-align:center; flex-shrink:0;">
-                DOKUMEN<br>DRIVE
-            </div>`;
+        const fileId = getFileIdFromUrl(file.file_url);
+        const ikon   = getIkon(file.file_url, file.penjelasan);
+
+        const previewHtml = fileId
+            ? `<img src="${getThumbnailUrl(fileId)}"
+                    style="width:70px; height:70px; object-fit:cover; border-radius:4px;
+                           border:1px solid #ddd; flex-shrink:0; background:#f3f4f6;"
+                    onerror="this.outerHTML='<div style=&quot;width:70px;height:70px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:28px;flex-shrink:0;&quot;>${ikon}</div>'">`
+            : `<div style="width:70px; height:70px; background:#e0f2fe; color:#0284c7;
+                           display:flex; align-items:center; justify-content:center;
+                           border-radius:4px; font-size:28px; flex-shrink:0;">${ikon}</div>`;
 
         html += `
             <div style="display:flex; align-items:center; padding:15px; border:1px solid #eee;
@@ -233,9 +211,8 @@ async function loadDaftarBukti() {
                         box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 ${previewHtml}
                 <div style="flex-grow:1; min-width:0;">
-                    <strong style="color:var(--primary); font-size:15px;
-                                   display:block; white-space:nowrap; overflow:hidden;
-                                   text-overflow:ellipsis;">
+                    <strong style="color:var(--primary); font-size:15px; display:block;
+                                   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                         ${file.penjelasan}
                     </strong>
                     <a href="${file.file_url}" target="_blank"
@@ -256,20 +233,19 @@ async function loadDaftarBukti() {
 }
 
 // ============================================================
-// HAPUS LAMPIRAN (data DB saja, file Drive tetap aman)
+// HAPUS LAMPIRAN
 // ============================================================
 window.hapusBukti = async function(idDB) {
-    if (!confirm("Yakin ingin mencopot lampiran ini dari laporan?\n(File asli di Drive tetap aman)")) return;
+    if (!confirm("Yakin ingin mencopot lampiran ini?\n(File asli di Drive tetap aman)")) return;
     await supabase.from('bukti_dukung').delete().eq('id', idDB);
     loadDaftarBukti();
 }
 
 // ============================================================
-// INIT: Jalankan saat halaman selesai dimuat
+// INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     if (kegiatanId) {
         loadDaftarBukti();
-        fetchDriveFiles(false); // Pakai cache GAS dulu (cepat), refresh manual kalau perlu
     }
 });
