@@ -64,32 +64,60 @@ if (formTriwulan) {
 // 3. MODUL KANBAN BOARD
 // ==========================================
 async function loadKanban() {
-    const { data, error } = await supabase.from('kegiatan').select('id, nama_kegiatan, status').order('created_at', { ascending: false });
+    // Ambil field jenis_pekerjaan juga
+    const { data, error } = await supabase.from('kegiatan').select('id, nama_kegiatan, status, jenis_pekerjaan').order('created_at', { ascending: false });
     if (error || !data) return;
 
-    // List semua status yang ada
     const statuses = ['Persiapan', 'Pelaksanaan', 'Pelaporan', 'Monitoring dan Evaluasi', 'Selesai'];
     
-    // Bersihkan semua kolom
     statuses.forEach(s => {
-        const id = s.replace(/\s/g, ''); // Hilangkan spasi untuk mencari ID elemen
+        const id = s.replace(/\s/g, ''); 
         const el = document.getElementById(`col-${id}`);
         if(el) el.innerHTML = '';
     });
 
-    // Masukkan kartu ke kolom masing-masing
     data.forEach(keg => {
         const currentStatus = keg.status || 'Persiapan';
-        const targetId = currentStatus.replace(/\s/g, ''); // Misal: "Monitoring dan Evaluasi" -> "MonitoringdanEvaluasi"
+        const targetId = currentStatus.replace(/\s/g, ''); 
         const col = document.getElementById(`col-${targetId}`);
         
+        // Buat badge warna berdasarkan jenis pekerjaan
+        let badgeClass = 'badge-rutin';
+        if(keg.jenis_pekerjaan === 'KPI Utama') badgeClass = 'badge-kpi';
+        if(keg.jenis_pekerjaan === 'Inovasi') badgeClass = 'badge-inovasi';
+        
+        const badgeHtml = keg.jenis_pekerjaan ? `<span class="area-badge ${badgeClass}">${keg.jenis_pekerjaan}</span>` : '';
+
         if(col) {
+            // Jika masuk tab Arsip (Selesai), tampilannya beda sedikit (lebih lebar karena pakai CSS Grid)
+            const isArsip = currentStatus === 'Selesai';
             col.innerHTML += `
-                <div class="kanban-card" data-id="${keg.id}">
+                <div class="kanban-card" data-id="${keg.id}" style="${isArsip ? 'border-left-color: var(--success);' : ''}">
+                    ${badgeHtml}
                     <h5>${keg.nama_kegiatan}</h5>
-                    <a href="kegiatan.html?id=${keg.id}" style="font-size: 12px; color: var(--secondary); text-decoration: none;">Lihat Detail</a>
+                    <a href="kegiatan.html?id=${keg.id}" style="font-size: 12px; color: var(--secondary); text-decoration: none; font-weight: bold;">Buka Dokumen &rarr;</a>
                 </div>
             `;
+        }
+    });
+
+    // Inisialisasi Drag-and-Drop (Hanya untuk 4 kolom Eksekusi)
+    const eksekusiStatuses = ['Persiapan', 'Pelaksanaan', 'Pelaporan', 'Monitoring dan Evaluasi'];
+    eksekusiStatuses.forEach(s => {
+        const id = s.replace(/\s/g, '');
+        const targetEl = document.getElementById(`col-${id}`);
+        
+        if(targetEl) {
+            new Sortable(targetEl, {
+                group: 'shared',
+                animation: 150,
+                onEnd: async function (evt) {
+                    const itemEl = evt.item;
+                    const newStatus = evt.to.closest('.kanban-col').getAttribute('data-status');
+                    const kegiatanId = itemEl.getAttribute('data-id');
+                    await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
+                },
+            });
         }
     });
 

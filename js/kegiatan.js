@@ -31,6 +31,7 @@ async function loadKegiatanDetail() {
         document.getElementById('status').value = data.status || 'Persiapan';
         document.getElementById('daftar_pertanyaan').value = data.daftar_pertanyaan || '';
         document.getElementById('panelBuktiDukung').style.display = 'block';
+        document.getElementById('jenis_pekerjaan').value = data.jenis_pekerjaan || 'KPI Utama';
     }
 }
 
@@ -48,7 +49,8 @@ document.getElementById('formKegiatan').addEventListener('submit', async (e) => 
         rencana_kerja_kipapp: document.getElementById('rencana_kerja').value,
         deskripsi: document.getElementById('deskripsi').value,
         status: document.getElementById('status').value,
-        daftar_pertanyaan: document.getElementById('daftar_pertanyaan').value
+        daftar_pertanyaan: document.getElementById('daftar_pertanyaan').value,
+        jenis_pekerjaan: document.getElementById('jenis_pekerjaan').value
     };
 
     let result;
