@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kegiatan - Viewer</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .print-only { display: none; }
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
+            .page-a4 { margin: 0; box-shadow: none; width: 100%; padding: 0; }
+            body { background: white; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body style="background-color: #cbd5e1;"> <div class="no-print" style="background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;">
+<body style="background-color: #cbd5e1;"> 
+
+    <div class="no-print" style="background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;">
         <strong>Mode Viewer</strong> - Tampilan Resmi Laporan. <button onclick="window.print()" class="btn-primary" style="margin-left: 20px; background: white; color: var(--primary);">Cetak / Export PDF</button>
     </div>
 
@@ -29,6 +33,16 @@
         const token = urlParams.get('token');
         const viewerContent = document.getElementById('viewerContent');
 
+        // FUNGSI CERDAS: Mengubah Link Google Drive biasa menjadi Link Embed (Preview)
+        function getEmbedUrl(url) {
+            if (url.includes('drive.google.com/file/d/')) {
+                return url.replace(/\/view.*$/, '/preview'); // Google Drive Files
+            } else if (url.includes('docs.google.com')) {
+                return url.replace(/\/edit.*$/, '/preview'); // Google Docs/Sheets/Slides
+            }
+            return url;
+        }
+
         async function loadViewerData() {
             if (!token) return;
 
@@ -37,7 +51,6 @@
 
             const { data: buktiData } = await supabase.from('bukti_dukung').select('*').eq('kegiatan_id', kegiatanData.id).order('created_at', { ascending: true });
 
-            // HEADER DOKUMEN RESMI
             let html = `
                 <div style="border-bottom: 3px solid black; padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
                     <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">LAPORAN PELAKSANAAN KEGIATAN</h1>
@@ -54,42 +67,57 @@
                 <p style="text-align: justify; line-height: 1.8; white-space: pre-wrap;">${kegiatanData.deskripsi || '-'}</p>
             `;
 
-            // DAFTAR PERTANYAAN (Hanya muncul jika diisi)
             if (kegiatanData.daftar_pertanyaan) {
                 html += `
-                    <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">B. Daftar Pertanyaan / Catatan Evaluasi</h3>
+                    <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">B. Daftar Pertanyaan / Catatan Khusus</h3>
                     <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid var(--warning); white-space: pre-wrap;">${kegiatanData.daftar_pertanyaan}</div>
                 `;
             }
 
-            // BUKTI DUKUNG
-            html += `<h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">${kegiatanData.daftar_pertanyaan ? 'C' : 'B'}. Lampiran Bukti Dukung</h3>`;
+            html += `<h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">${kegiatanData.daftar_pertanyaan ? 'C' : 'B'}. Lampiran Bukti Dukung & Tautan</h3>`;
             
             if (!buktiData || buktiData.length === 0) {
                 html += `<p><i>Tidak ada lampiran dokumen.</i></p>`;
             } else {
                 buktiData.forEach((file, index) => {
                     let preview = '';
-                    if (file.file_type && file.file_type.includes('image')) {
-                        // Jika Gambar
+                    
+                    // JIKA ITU ADALAH TAUTAN GOOGLE DRIVE / LINK EKSTERNAL
+                    if (file.file_type === 'link') {
+                        let embedUrl = getEmbedUrl(file.file_url);
+                        
+                        // Jika bisa di-embed (Google Drive/Docs), tampilkan Iframe
+                        if (embedUrl.includes('/preview')) {
+                            preview = `
+                                <iframe src="${embedUrl}" width="100%" height="600px" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 15px;" class="no-print"></iframe>
+                                <div class="no-print" style="margin-top: 10px;">
+                                    <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka Dokumen di Tab Baru (Layar Penuh)</a>
+                                </div>
+                                <p class="print-only"><i>(Tautan dokumen eksternal telah dilampirkan pada sistem pelaporan digital)</i></p>
+                            `;
+                        } else {
+                            // Jika link website biasa (misal: Berita web)
+                            preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Buka Tautan Eksternal &#8599;</a>`;
+                        }
+                    } 
+                    // JIKA ITU ADALAH FILE FISIK (GAMBAR/PDF)
+                    else if (file.file_type && file.file_type.includes('image')) {
                         preview = `<img src="${file.file_url}" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px; border-radius: 4px;">`;
                     } else if (file.file_type === 'application/pdf' || file.file_name.toLowerCase().endsWith('.pdf')) {
-                        // Jika PDF: Tampilkan Iframe untuk Viewer di layar, tapi sembunyikan saat dicetak
                         preview = `
                             <iframe src="${file.file_url}" width="100%" height="600px" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 15px;" class="no-print"></iframe>
                             <div class="no-print" style="margin-top: 10px;">
-                                <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka PDF di Tab Baru (Full Screen)</a>
+                                <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka PDF di Tab Baru</a>
                             </div>
-                            <p style="display: none;" class="print-only"><i>(Dokumen PDF terlampir pada sistem)</i></p>
+                            <p class="print-only"><i>(Dokumen PDF terlampir pada sistem)</i></p>
                         `;
                     } else {
-                        // Jika Excel / Word / Lainnya
-                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Download Dokumen (${file.file_name.split('.').pop().toUpperCase()})</a>`;
+                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Download Dokumen Asli (${file.file_name.split('.').pop().toUpperCase()})</a>`;
                     }
 
                     html += `
                         <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                            <div style="font-weight: bold; background: #e2e8f0; padding: 8px 15px;">Lampiran ${index + 1}: ${file.penjelasan || file.file_name}</div>
+                            <div style="font-weight: bold; background: #e2e8f0; padding: 8px 15px; border-radius: 4px;">Lampiran ${index + 1}: ${file.penjelasan || 'Dokumen'}</div>
                             ${preview}
                         </div>
                     `;
