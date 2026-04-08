@@ -1,30 +1,36 @@
 // ==========================================
-// 1. LOGIKA TAB NAVIGASI
-// ==========================================
-// ==========================================
-// 1. LOGIKA TAB NAVIGASI
+// 1. LOGIKA TAB NAVIGASI (A.R.E.A)
 // ==========================================
 function openTab(tabId, btnElement) {
-    // Sembunyikan semua tab content
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    // Sembunyikan semua tab content secara paksa
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.display = 'none'; 
+    });
+    
     // Hapus status active dari semua tombol
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     
     // Tampilkan tab yang diklik
-    document.getElementById(tabId).classList.add('active');
+    const activeTab = document.getElementById(tabId);
+    if(activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.display = 'block'; 
+    }
     btnElement.classList.add('active');
 
-    // PERBAIKAN: Gunakan setTimeout dan updateSize()
-    if(tabId === 'tab-kalender' && window.calendarAPI) {
-        // Beri jeda 100 milidetik agar tab benar-benar terbuka sebelum kalender menyesuaikan ukuran
+    // PERBAIKAN KALENDER: Paksa render ulang saat tab Rencana dibuka
+    // Catatan: ID tab kalender di versi A.R.E.A adalah 'tab-rencana'
+    if(tabId === 'tab-rencana' && window.calendarAPI) {
         setTimeout(() => {
-            window.calendarAPI.updateSize(); 
-        }, 100);
+            window.calendarAPI.render();      // Gambar ulang dari nol
+            window.calendarAPI.updateSize();  // Sesuaikan dengan kotak kontainer
+        }, 150); // Jeda 150ms agar animasi transisi selesai
     }
 }
 
 // ==========================================
-// 2. MODUL TRIWULAN (Fungsi Asli)
+// 2. ARSITEKTUR: MODUL WADAH / TRIWULAN
 // ==========================================
 async function loadTriwulan() {
     const listContainer = document.getElementById('triwulanList');
@@ -33,7 +39,7 @@ async function loadTriwulan() {
     const { data, error } = await supabase.from('triwulan').select('*').order('tahun', { ascending: false }).order('periode', { ascending: true });
 
     if (error) { listContainer.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`; return; }
-    if (data.length === 0) { listContainer.innerHTML = "<p>Belum ada data triwulan.</p>"; return; }
+    if (data.length === 0) { listContainer.innerHTML = "<p>Belum ada data wadah/proyek.</p>"; return; }
 
     let html = '<div style="display:flex; flex-direction:column; gap:10px;">';
     data.forEach(item => {
@@ -43,7 +49,7 @@ async function loadTriwulan() {
                     <strong style="font-size: 16px; color: var(--primary);">${item.nama}</strong><br>
                     <span style="font-size: 13px; color: var(--text-muted);">Tahun ${item.tahun}</span>
                 </div>
-                <a href="triwulan.html?id=${item.id}" class="btn-primary" style="text-decoration: none;">Buka Triwulan &rarr;</a>
+                <a href="triwulan.html?id=${item.id}" class="btn-primary" style="text-decoration: none;">Buka Proyek &rarr;</a>
             </div>
         `;
     });
@@ -67,21 +73,21 @@ if (formTriwulan) {
 }
 
 // ==========================================
-// 3. MODUL KANBAN BOARD
+// 3. EKSEKUSI & ARSIP: MODUL KANBAN BOARD
 // ==========================================
 async function loadKanban() {
-    // Ambil field jenis_pekerjaan juga
     const { data, error } = await supabase.from('kegiatan').select('id, nama_kegiatan, status, jenis_pekerjaan').order('created_at', { ascending: false });
     if (error || !data) return;
 
+    // Bersihkan semua kolom (5 Kolom: Persiapan s.d Selesai)
     const statuses = ['Persiapan', 'Pelaksanaan', 'Pelaporan', 'Monitoring dan Evaluasi', 'Selesai'];
-    
     statuses.forEach(s => {
         const id = s.replace(/\s/g, ''); 
         const el = document.getElementById(`col-${id}`);
         if(el) el.innerHTML = '';
     });
 
+    // Distribusikan kartu ke kolom masing-masing
     data.forEach(keg => {
         const currentStatus = keg.status || 'Persiapan';
         const targetId = currentStatus.replace(/\s/g, ''); 
@@ -95,19 +101,18 @@ async function loadKanban() {
         const badgeHtml = keg.jenis_pekerjaan ? `<span class="area-badge ${badgeClass}">${keg.jenis_pekerjaan}</span>` : '';
 
         if(col) {
-            // Jika masuk tab Arsip (Selesai), tampilannya beda sedikit (lebih lebar karena pakai CSS Grid)
             const isArsip = currentStatus === 'Selesai';
             col.innerHTML += `
-                <div class="kanban-card" data-id="${keg.id}" style="${isArsip ? 'border-left-color: var(--success);' : ''}">
+                <div class="kanban-card" data-id="${keg.id}" style="${isArsip ? 'border-left-color: var(--success); margin-bottom: 0;' : ''}">
                     ${badgeHtml}
                     <h5>${keg.nama_kegiatan}</h5>
-                    <a href="kegiatan.html?id=${keg.id}" style="font-size: 12px; color: var(--secondary); text-decoration: none; font-weight: bold;">Buka Dokumen &rarr;</a>
+                    <a href="kegiatan.html?id=${keg.id}" style="font-size: 12px; color: var(--secondary); text-decoration: none; font-weight: bold;">${isArsip ? 'Buka Dokumen &rarr;' : 'Lihat Detail'}</a>
                 </div>
             `;
         }
     });
 
-    // Inisialisasi Drag-and-Drop (Hanya untuk 4 kolom Eksekusi)
+    // Inisialisasi Drag-and-Drop HANYA untuk 4 kolom Eksekusi (Selesai tidak ikut di-drag karena pindah ke tab Arsip)
     const eksekusiStatuses = ['Persiapan', 'Pelaksanaan', 'Pelaporan', 'Monitoring dan Evaluasi'];
     eksekusiStatuses.forEach(s => {
         const id = s.replace(/\s/g, '');
@@ -121,44 +126,26 @@ async function loadKanban() {
                     const itemEl = evt.item;
                     const newStatus = evt.to.closest('.kanban-col').getAttribute('data-status');
                     const kegiatanId = itemEl.getAttribute('data-id');
-                    await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
-                },
-            });
-        }
-    });
-
-    // Inisialisasi Drag-and-Drop untuk setiap kolom
-    statuses.forEach(s => {
-        const id = s.replace(/\s/g, '');
-        const targetEl = document.getElementById(`col-${id}`);
-        
-        if(targetEl) {
-            new Sortable(targetEl, {
-                group: 'shared',
-                animation: 150,
-                onEnd: async function (evt) {
-                    const itemEl = evt.item;
-                    // Ambil status asli dari data-status di elemen induknya (kanban-col)
-                    const newStatus = evt.to.closest('.kanban-col').getAttribute('data-status');
-                    const kegiatanId = itemEl.getAttribute('data-id');
-
-                    // Update ke database
+                    
+                    // Update status di database Supabase
                     await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
                 },
             });
         }
     });
 }
+
 // ==========================================
-// 4. MODUL KALENDER (FullCalendar)
+// 4. RENCANA: MODUL KALENDER (FullCalendar)
 // ==========================================
 async function loadKalender() {
     const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
     
-    // Ambil data kegiatan
+    // Ambil data dari database
     const { data } = await supabase.from('kegiatan').select('id, nama_kegiatan, waktu_pelaksanaan, waktu_selesai');
     
-    // Format data agar sesuai dengan standar FullCalendar
+    // Format data kalender
     const events = data ? data.map(keg => {
         // FullCalendar butuh H+1 untuk tanggal selesai (exclusive end date)
         let endObj = new Date(keg.waktu_selesai || keg.waktu_pelaksanaan);
@@ -170,13 +157,14 @@ async function loadKalender() {
             start: keg.waktu_pelaksanaan,
             end: endString,
             url: `kegiatan.html?id=${keg.id}`,
-            color: 'var(--secondary)'
+            color: 'var(--primary)'
         };
     }) : [];
 
     // Render Kalender
     window.calendarAPI = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        height: 'auto', // PERBAIKAN: Tinggi otomatis
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -184,8 +172,10 @@ async function loadKalender() {
         },
         events: events,
         eventClick: function(info) {
-            info.jsEvent.preventDefault(); // Mencegah buka tab baru otomatis
-            if (info.event.url) { window.location.href = info.event.url; }
+            info.jsEvent.preventDefault(); // Mencegah error link default
+            if (info.event.url) { 
+                window.location.href = info.event.url; 
+            }
         }
     });
     window.calendarAPI.render();
