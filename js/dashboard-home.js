@@ -1,246 +1,132 @@
-// ============================================================
-// DASHBOARD BERANDA — "Asisten Pagi" 
-// File: js/dashboard-home.js
-// Dipanggil dari dashboard.html, tab ke-0 (Beranda)
-// ============================================================
-
 async function loadBeranda() {
     const el = {
-        tanggal:       document.getElementById('beranda-tanggal'),
-        sapaan:        document.getElementById('beranda-sapaan'),
-        deadlineList:  document.getElementById('beranda-deadline'),
-        tanpaBukti:    document.getElementById('beranda-tanpa-bukti'),
-        kpiRingkasan:  document.getElementById('beranda-kpi'),
-        triwulanAktif: document.getElementById('beranda-triwulan'),
+        tanggal:      document.getElementById('beranda-tanggal'),
+        sapaan:       document.getElementById('beranda-sapaan'),
+        todoList:     document.getElementById('priority-todo-list'),
+        kpiRingkas:   document.getElementById('beranda-kpi-ringkas'),
+        kpiDetail:    document.getElementById('beranda-kpi-detail'),
+        quickForm:    document.getElementById('quickInputForm')
     };
 
-    // ── Tanggal & Sapaan ──────────────────────────────────────
+    // 1. WAKTU & SAPAAN
     const sekarang = new Date();
     const jam = sekarang.getHours();
     const sapaan = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 18 ? 'Selamat sore' : 'Selamat malam';
-    const opsiTanggal = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
-    
-    if (el.tanggal) el.tanggal.innerText = sekarang.toLocaleDateString('id-ID', opsiTanggal);
-    if (el.sapaan)  el.sapaan.innerText  = sapaan;
+    if(el.tanggal) el.tanggal.innerText = sekarang.toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    if(el.sapaan) el.sapaan.innerText = sapaan;
 
-    // ── Ambil semua data kegiatan sekaligus ───────────────────
-    const { data: semuaKegiatan, error } = await supabase
-        .from('kegiatan')
-        .select('id, nama_kegiatan, status, jenis_pekerjaan, waktu_selesai, triwulan_id')
-        .order('waktu_selesai', { ascending: true });
+    // 2. LOAD DATA KEGIATAN & SORTIR DEADLINE
+    const { data: kegiatans, error } = await supabase.from('kegiatan').select('*').order('waktu_selesai', { ascending: true });
+    if (error) return;
 
-    if (error || !semuaKegiatan) return;
+    renderTodoList(kegiatans, el.todoList);
+    renderKPISummary(kegiatans, el.kpiRingkas, el.kpiDetail);
 
-    const hariIni     = new Date(); hariIni.setHours(0,0,0,0);
-    const tigaHariLagi = new Date(hariIni); tigaHariLagi.setDate(hariIni.getDate() + 3);
+    // 3. LOGIKA QUICK INPUT (OTOMATIS TRIWULAN)
+    if(el.quickForm) {
+        el.quickForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true; btn.innerText = '...';
 
-    // ── 1. ALERT: Deadline ≤ 3 hari & belum Selesai ───────────
-    const mauDeadline = semuaKegiatan.filter(k => {
-        if (k.status === 'Selesai') return false;
-        if (!k.waktu_selesai) return false;
-        const tgl = new Date(k.waktu_selesai); tgl.setHours(0,0,0,0);
-        return tgl <= tigaHariLagi;
-    });
+            const bulan = sekarang.getMonth() + 1; // 1-12
+            const periode = Math.ceil(bulan / 3); // Otomatis 1, 2, 3, atau 4
+            const tahun = sekarang.getFullYear();
 
-    if (el.deadlineList) {
-        if (mauDeadline.length === 0) {
-            el.deadlineList.innerHTML = `
-                <div style="padding:12px 16px; background:#f0fdf4; border:1px solid #bbf7d0;
-                            border-radius:8px; color:#166534; font-size:13px;">
-                    ✓ Tidak ada kegiatan yang mendekati deadline. Aman!
-                </div>`;
-        } else {
-            let html = '';
-            mauDeadline.forEach(k => {
-                const tgl    = new Date(k.waktu_selesai); tgl.setHours(0,0,0,0);
-                const selisih = Math.round((tgl - hariIni) / (1000*60*60*24));
-                const labelWaktu = selisih < 0
-                    ? `<span style="color:#dc2626; font-weight:700;">TERLAMBAT ${Math.abs(selisih)} hari</span>`
-                    : selisih === 0
-                        ? `<span style="color:#dc2626; font-weight:700;">HARI INI</span>`
-                        : `<span style="color:#d97706; font-weight:700;">${selisih} hari lagi</span>`;
+            // Cari ID Triwulan yang cocok
+            const { data: tri } = await supabase.from('triwulan').select('id').eq('tahun', tahun).eq('periode', periode).single();
+            
+            if(!tri) { alert("Wadah Triwulan belum tersedia di menu Arsitektur!"); btn.disabled = false; return; }
 
-                html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center;
-                                padding:10px 14px; background:#fff; border:1px solid #fca5a5;
-                                border-left:4px solid #ef4444; border-radius:6px; margin-bottom:8px;">
-                        <div>
-                            <div style="font-size:13px; font-weight:600; color:#1e293b;">
-                                ${k.nama_kegiatan}
-                            </div>
-                            <div style="font-size:11px; color:#64748b; margin-top:2px;">
-                                ${k.status} · Deadline: ${tgl.toLocaleDateString('id-ID')}
-                            </div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-                            ${labelWaktu}
-                            <a href="kegiatan.html?id=${k.id}"
-                               style="font-size:11px; color:#3b82f6; text-decoration:none; font-weight:600;">
-                                Buka →
-                            </a>
-                        </div>
-                    </div>`;
-            });
-            el.deadlineList.innerHTML = html;
-        }
-    }
+            const payload = {
+                nama_kegiatan: document.getElementById('q-nama').value,
+                jumlah_target: parseInt(document.getElementById('q-jumlah').value),
+                satuan_target: document.getElementById('q-satuan').value || 'Dokumen',
+                waktu_selesai: document.getElementById('q-deadline').value,
+                triwulan_id: tri.id,
+                status: 'Persiapan',
+                jenis_pekerjaan: 'KPI Utama',
+                waktu_pelaksanaan: sekarang.toISOString().split('T')[0]
+            };
 
-    // ── 2. ALERT: Kegiatan tanpa bukti dukung ────────────────
-    if (el.tanpaBukti) {
-        // Ambil semua kegiatan_id yang sudah punya bukti dukung
-        const { data: semuaBukti } = await supabase
-            .from('bukti_dukung')
-            .select('kegiatan_id');
-
-        const idDenganBukti = new Set((semuaBukti || []).map(b => b.kegiatan_id));
-
-        // Filter: belum Selesai, belum punya bukti, sudah lewat tanggal mulai
-        const tanpaBuktiList = semuaKegiatan.filter(k =>
-            k.status !== 'Selesai' &&
-            !idDenganBukti.has(k.id)
-        );
-
-        if (tanpaBuktiList.length === 0) {
-            el.tanpaBukti.innerHTML = `
-                <div style="padding:12px 16px; background:#f0fdf4; border:1px solid #bbf7d0;
-                            border-radius:8px; color:#166534; font-size:13px;">
-                    ✓ Semua kegiatan aktif sudah memiliki bukti dukung.
-                </div>`;
-        } else {
-            let html = `
-                <div style="padding:8px 14px; background:#fefce8; border:1px solid #fde68a;
-                            border-radius:6px; margin-bottom:10px; font-size:12px; color:#92400e;">
-                    ⚠️ ${tanpaBuktiList.length} kegiatan belum ada lampiran bukti dukung
-                </div>`;
-            tanpaBuktiList.slice(0, 5).forEach(k => {
-                html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center;
-                                padding:9px 14px; background:#fff; border:1px solid #fde68a;
-                                border-left:4px solid #f59e0b; border-radius:6px; margin-bottom:6px;">
-                        <div style="font-size:13px; color:#1e293b;">${k.nama_kegiatan}</div>
-                        <a href="kegiatan.html?id=${k.id}"
-                           style="font-size:11px; color:#3b82f6; text-decoration:none; font-weight:600; flex-shrink:0;">
-                            + Lampirkan →
-                        </a>
-                    </div>`;
-            });
-            if (tanpaBuktiList.length > 5) {
-                html += `<div style="font-size:12px; color:#64748b; text-align:center; padding:4px;">
-                    ...dan ${tanpaBuktiList.length - 5} kegiatan lainnya
-                </div>`;
-            }
-            el.tanpaBukti.innerHTML = html;
-        }
-    }
-
-    // ── 3. PROGRESS KPI (semua kegiatan, lintas triwulan) ─────
-    if (el.kpiRingkasan) {
-        const total   = semuaKegiatan.length;
-        const selesai = semuaKegiatan.filter(k => k.status === 'Selesai').length;
-        const persen  = total > 0 ? Math.round((selesai / total) * 100) : 0;
-
-        // Hitung per jenis pekerjaan
-        const jenisList = ['KPI Utama', 'Tugas Rutin', 'Tugas Tambahan', 'Inovasi'];
-        const warnaJenis = {
-            'KPI Utama':     { bg:'#fee2e2', text:'#991b1b', bar:'#ef4444' },
-            'Tugas Rutin':   { bg:'#e0e7ff', text:'#3730a3', bar:'#6366f1' },
-            'Tugas Tambahan':{ bg:'#fef9c3', text:'#854d0e', bar:'#f59e0b' },
-            'Inovasi':       { bg:'#dcfce7', text:'#166534', bar:'#10b981' },
+            const { error: insErr } = await supabase.from('kegiatan').insert([payload]);
+            if(insErr) alert(insErr.message);
+            else { el.quickForm.reset(); loadBeranda(); }
+            btn.disabled = false; btn.innerText = '+ Tambah';
         };
-
-        let htmlJenis = '';
-        jenisList.forEach(jenis => {
-            const grup     = semuaKegiatan.filter(k => k.jenis_pekerjaan === jenis);
-            if (grup.length === 0) return;
-            const slsJenis = grup.filter(k => k.status === 'Selesai').length;
-            const pJenis   = Math.round((slsJenis / grup.length) * 100);
-            const w        = warnaJenis[jenis] || { bg:'#f1f5f9', text:'#475569', bar:'#94a3b8' };
-
-            htmlJenis += `
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <span style="font-size:12px; font-weight:600; 
-                                     background:${w.bg}; color:${w.text};
-                                     padding:2px 8px; border-radius:4px;">
-                            ${jenis}
-                        </span>
-                        <span style="font-size:12px; color:#64748b;">
-                            ${slsJenis}/${grup.length} selesai
-                        </span>
-                    </div>
-                    <div style="background:#e2e8f0; border-radius:4px; height:8px; overflow:hidden;">
-                        <div style="background:${w.bar}; width:${pJenis}%; height:100%;
-                                    border-radius:4px; transition:width 0.5s;"></div>
-                    </div>
-                </div>`;
-        });
-
-        const warnaTotal = persen >= 80 ? '#10b981' : persen >= 50 ? '#f59e0b' : '#ef4444';
-
-        el.kpiRingkasan.innerHTML = `
-            <div style="margin-bottom:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-                    <span style="font-size:13px; font-weight:600; color:#1e293b;">Total Semua Kegiatan</span>
-                    <span style="font-size:22px; font-weight:700; color:${warnaTotal};">${persen}%</span>
-                </div>
-                <div style="background:#e2e8f0; border-radius:6px; height:12px; overflow:hidden;">
-                    <div style="background:${warnaTotal}; width:${persen}%; height:100%;
-                                border-radius:6px; transition:width 0.6s;"></div>
-                </div>
-                <div style="font-size:12px; color:#64748b; margin-top:4px;">
-                    ${selesai} dari ${total} kegiatan selesai
-                </div>
-            </div>
-            <div style="border-top:1px solid #e2e8f0; padding-top:16px;">
-                ${htmlJenis}
-            </div>`;
-    }
-
-    // ── 4. SHORTCUT: Triwulan/Proyek Aktif ───────────────────
-    if (el.triwulanAktif) {
-        const tahunIni = new Date().getFullYear();
-        const { data: triwulanData } = await supabase
-            .from('triwulan')
-            .select('*')
-            .eq('tahun', tahunIni)
-            .order('periode', { ascending: true });
-
-        if (!triwulanData || triwulanData.length === 0) {
-            el.triwulanAktif.innerHTML = `
-                <p style="color:#64748b; font-size:13px;">
-                    Belum ada proyek untuk tahun ${tahunIni}.
-                    <a href="#" onclick="openTab('tab-arsitektur', document.querySelectorAll('.tab-btn')[1]); return false;"
-                       style="color:#3b82f6;">Buat sekarang →</a>
-                </p>`;
-        } else {
-            let html = '';
-            triwulanData.forEach(t => {
-                const jmlKegiatan = semuaKegiatan.filter(k => k.triwulan_id === t.id).length;
-                const jmlSelesai  = semuaKegiatan.filter(k => k.triwulan_id === t.id && k.status === 'Selesai').length;
-
-                html += `
-                    <a href="triwulan.html?id=${t.id}"
-                       style="display:flex; justify-content:space-between; align-items:center;
-                              padding:12px 16px; background:#f8fafc; border:1px solid #e2e8f0;
-                              border-radius:8px; text-decoration:none; margin-bottom:8px;
-                              transition:border-color 0.2s;"
-                       onmouseover="this.style.borderColor='#3b82f6'"
-                       onmouseout="this.style.borderColor='#e2e8f0'">
-                        <div>
-                            <div style="font-size:14px; font-weight:600; color:#1e3a8a;">${t.nama}</div>
-                            <div style="font-size:12px; color:#64748b; margin-top:2px;">
-                                Tahun ${t.tahun} · ${jmlKegiatan} kegiatan · ${jmlSelesai} selesai
-                            </div>
-                        </div>
-                        <span style="color:#3b82f6; font-size:18px;">→</span>
-                    </a>`;
-            });
-            el.triwulanAktif.innerHTML = html;
-        }
     }
 }
 
-// Jalankan saat halaman dimuat
-document.addEventListener('DOMContentLoaded', () => {
-    loadBeranda();
-});
+function renderTodoList(data, container) {
+    if(!container) return;
+    const aktif = data.filter(k => k.status !== 'Selesai');
+    
+    if(aktif.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">Semua rencana sudah tuntas! 🚀</div>';
+        return;
+    }
+
+    let html = '';
+    const hariIni = new Date(); hariIni.setHours(0,0,0,0);
+
+    aktif.forEach(k => {
+        const tgl = new Date(k.waktu_selesai); tgl.setHours(0,0,0,0);
+        const selisih = Math.round((tgl - hariIni) / (1000*60*60*24));
+        
+        let warnaDeadline = selisih < 0 ? '#ef4444' : selisih <= 3 ? '#f59e0b' : '#3b82f6';
+        let labelWaktu = selisih < 0 ? `Terlewat ${Math.abs(selisih)} hari` : selisih === 0 ? 'HARI INI' : `${selisih} hari lagi`;
+
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9;">
+                <div style="min-width:0; flex:1;">
+                    <div style="font-weight:600; color:#1e293b; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${k.nama_kegiatan}</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">Target: ${k.jumlah_target} ${k.satuan_target} · Status: ${k.status}</div>
+                </div>
+                <div style="text-align:right; margin-left:15px; flex-shrink:0;">
+                    <div style="font-size:11px; font-weight:700; color:${warnaDeadline}; text-transform:uppercase;">${labelWaktu}</div>
+                    <a href="kegiatan.html?id=${k.id}" style="font-size:12px; color:#2563eb; text-decoration:none; font-weight:600;">Workspace &rarr;</a>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function renderKPISummary(data, ringkasEl, detailEl) {
+    const total = data.length;
+    const selesai = data.filter(k => k.status === 'Selesai').length;
+    const persen = total > 0 ? Math.round((selesai / total) * 100) : 0;
+
+    if(ringkasEl) {
+        ringkasEl.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:600;">Progress KPI</span>
+                <span style="font-size:24px; font-weight:700;">${persen}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.2); height:8px; border-radius:10px; overflow:hidden;">
+                <div style="background:white; width:${persen}%; height:100%;"></div>
+            </div>
+            <div style="font-size:11px; margin-top:8px; opacity:0.8;">${selesai} dari ${total} tugas telah diarsip sebagai Selesai.</div>
+        `;
+    }
+
+    if(detailEl) {
+        const jenis = ['KPI Utama', 'Tugas Rutin', 'Tugas Tambahan', 'Inovasi'];
+        detailEl.innerHTML = jenis.map(j => {
+            const grup = data.filter(k => k.jenis_pekerjaan === j);
+            if(grup.length === 0) return '';
+            const p = Math.round((grup.filter(k => k.status === 'Selesai').length / grup.length) * 100);
+            return `
+                <div style="margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                        <span>${j}</span><span>${p}%</span>
+                    </div>
+                    <div style="background:#f1f5f9; height:5px; border-radius:10px;">
+                        <div style="background:#3b82f6; width:${p}%; height:100%;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadBeranda);

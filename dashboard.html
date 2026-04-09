@@ -61,61 +61,55 @@
         <!-- ================================================ -->
         <div id="tab-beranda" class="tab-content active">
 
-            <!-- Sapaan -->
-            <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-                                     color: white; border: none; margin-bottom: 20px;">
-                <div style="font-size: 13px; opacity: 0.8;" id="beranda-tanggal">Memuat...</div>
-                <div style="font-size: 22px; font-weight: 700; margin: 4px 0;" id="beranda-sapaan">Selamat datang</div>
-                <div style="font-size: 13px; opacity: 0.8;">Berikut ringkasan pekerjaan Anda hari ini.</div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-
-                <!-- Kolom Kiri -->
-                <div>
-                    <!-- Alert Deadline -->
-                    <div class="card">
-                        <p class="beranda-section-title">🔴 Deadline Mendekat (≤ 3 hari)</p>
-                        <div id="beranda-deadline">
-                            <div style="color:#94a3b8; font-size:13px;">Memeriksa deadline...</div>
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start;">
+            
+            <div>
+                <div class="card" style="border-top: 4px solid var(--secondary); margin-bottom: 20px;">
+                    <p class="beranda-section-title">⚡ Quick Input: Rencana Pekan Ini</p>
+                    <form id="quickInputForm" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end;">
+                        <div>
+                            <label style="font-size: 11px;">Nama Pekerjaan</label>
+                            <input type="text" id="q-nama" placeholder="Contoh: Koordinasi SBR..." required style="margin:0;">
                         </div>
-                    </div>
-
-                    <!-- Alert Tanpa Bukti -->
-                    <div class="card">
-                        <p class="beranda-section-title">🟡 Belum Ada Bukti Dukung</p>
-                        <div id="beranda-tanpa-bukti">
-                            <div style="color:#94a3b8; font-size:13px;">Memeriksa lampiran...</div>
+                        <div>
+                            <label style="font-size: 11px;">Target</label>
+                            <div style="display: flex; gap: 5px;">
+                                <input type="number" id="q-jumlah" value="1" style="margin:0; width: 50px;">
+                                <input type="text" id="q-satuan" placeholder="Dok" style="margin:0;">
+                            </div>
                         </div>
-                    </div>
+                        <div>
+                            <label style="font-size: 11px;">Deadline</label>
+                            <input type="date" id="q-deadline" required style="margin:0;">
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin:0; padding: 10px 20px;">+ Tambah</button>
+                    </form>
                 </div>
 
-                <!-- Kolom Kanan -->
-                <div>
-                    <!-- Progress KPI -->
-                    <div class="card">
-                        <p class="beranda-section-title">📊 Progress KPI Keseluruhan</p>
-                        <div id="beranda-kpi">
-                            <div style="color:#94a3b8; font-size:13px;">Menghitung progress...</div>
-                        </div>
-                    </div>
-
-                    <!-- Shortcut Triwulan -->
-                    <div class="card">
-                        <p class="beranda-section-title">📁 Proyek Tahun Ini</p>
-                        <div id="beranda-triwulan">
-                            <div style="color:#94a3b8; font-size:13px;">Memuat proyek...</div>
-                        </div>
-                        <a href="#" onclick="openTab('tab-arsitektur', document.querySelectorAll('.tab-btn')[1]); return false;"
-                           style="display:block; text-align:center; margin-top:10px; font-size:12px;
-                                  color:#3b82f6; text-decoration:none;">
-                            + Kelola semua proyek →
-                        </a>
+                <div class="card">
+                    <p class="beranda-section-title">📅 Daftar To-Do List (Urut Deadline)</p>
+                    <div id="priority-todo-list">
+                        <div style="color:#94a3b8; font-size:13px; text-align:center; padding: 20px;">Memuat tugas Anda...</div>
                     </div>
                 </div>
-
             </div>
+
+            <div>
+                <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border: none;">
+                    <div id="beranda-tanggal" style="font-size: 12px; opacity: 0.8;"></div>
+                    <div id="beranda-sapaan" style="font-size: 20px; font-weight: 700;"></div>
+                    <hr style="opacity: 0.2; margin: 15px 0;">
+                    <div id="beranda-kpi-ringkas"></div>
+                </div>
+
+                <div class="card">
+                    <p class="beranda-section-title">📊 Progress Per Kategori</p>
+                    <div id="beranda-kpi-detail"></div>
+                </div>
+            </div>
+
         </div>
+    </div>
 
         <!-- ================================================ -->
         <!-- TAB ARSITEKTUR (tidak diubah)                     -->
