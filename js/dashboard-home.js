@@ -15,44 +15,56 @@ async function loadBeranda() {
     if(el.tanggal) el.tanggal.innerText = sekarang.toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     if(el.sapaan) el.sapaan.innerText = sapaan;
 
-    // 2. LOAD DATA KEGIATAN & SORTIR DEADLINE
+    // 2. LOAD DROPDOWN UNTUK QUICK INPUT (Penting untuk Sinkronisasi!)
+    const ddlTriwulan = document.getElementById('q-triwulan');
+    const ddlKpi = document.getElementById('q-kpi');
+    
+    if (ddlTriwulan && ddlTriwulan.options.length <= 1) {
+        const { data: triData } = await supabase.from('triwulan').select('*').order('periode', { ascending: true });
+        ddlTriwulan.innerHTML = '<option value="">-- Pilih Wadah Triwulan --</option>';
+        triData?.forEach(t => ddlTriwulan.innerHTML += `<option value="${t.id}">${t.nama} (${t.tahun})</option>`);
+    }
+
+    if (ddlKpi && ddlKpi.options.length <= 1) {
+        const { data: kpiData } = await supabase.from('rencana_kerja_kipapp').select('*').order('kode');
+        ddlKpi.innerHTML = '<option value="">-- Pilih Rencana Kinerja --</option>';
+        kpiData?.forEach(k => ddlKpi.innerHTML += `<option value="${k.nama}">${k.nama}</option>`);
+    }
+
+    // 3. LOAD DATA KEGIATAN & SORTIR DEADLINE
     const { data: kegiatans, error } = await supabase.from('kegiatan').select('*').order('waktu_selesai', { ascending: true });
     if (error) return;
 
     renderTodoList(kegiatans, el.todoList);
     renderKPISummary(kegiatans, el.kpiRingkas, el.kpiDetail);
 
-    // 3. LOGIKA QUICK INPUT (OTOMATIS TRIWULAN)
+    // 4. LOGIKA SIMPAN QUICK INPUT
     if(el.quickForm) {
         el.quickForm.onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
-            btn.disabled = true; btn.innerText = '...';
-
-            const bulan = sekarang.getMonth() + 1; // 1-12
-            const periode = Math.ceil(bulan / 3); // Otomatis 1, 2, 3, atau 4
-            const tahun = sekarang.getFullYear();
-
-            // Cari ID Triwulan yang cocok
-            const { data: tri } = await supabase.from('triwulan').select('id').eq('tahun', tahun).eq('periode', periode).single();
-            
-            if(!tri) { alert("Wadah Triwulan belum tersedia di menu Arsitektur!"); btn.disabled = false; return; }
+            btn.disabled = true; btn.innerText = 'Menyimpan...';
 
             const payload = {
                 nama_kegiatan: document.getElementById('q-nama').value,
+                triwulan_id: document.getElementById('q-triwulan').value,
+                rencana_kerja_kipapp: document.getElementById('q-kpi').value,
                 jumlah_target: parseInt(document.getElementById('q-jumlah').value),
                 satuan_target: document.getElementById('q-satuan').value || 'Dokumen',
                 waktu_selesai: document.getElementById('q-deadline').value,
-                triwulan_id: tri.id,
                 status: 'Persiapan',
                 jenis_pekerjaan: 'KPI Utama',
                 waktu_pelaksanaan: sekarang.toISOString().split('T')[0]
             };
 
             const { error: insErr } = await supabase.from('kegiatan').insert([payload]);
-            if(insErr) alert(insErr.message);
-            else { el.quickForm.reset(); loadBeranda(); }
-            btn.disabled = false; btn.innerText = '+ Tambah';
+            if(insErr) {
+                alert("Gagal menyimpan: " + insErr.message);
+            } else { 
+                el.quickForm.reset(); 
+                loadBeranda(); // Refresh data otomatis
+            }
+            btn.disabled = false; btn.innerText = '+ Tambah ke To-Do List';
         };
     }
 }
@@ -80,11 +92,11 @@ function renderTodoList(data, container) {
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9;">
                 <div style="min-width:0; flex:1;">
                     <div style="font-weight:600; color:#1e293b; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${k.nama_kegiatan}</div>
-                    <div style="font-size:12px; color:#64748b; margin-top:2px;">Target: ${k.jumlah_target} ${k.satuan_target} · Status: ${k.status}</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:2px;">Target: ${k.jumlah_target} ${k.satuan_target} · Wadah: ${k.triwulan_id ? 'Terkoneksi' : 'Kosong'}</div>
                 </div>
                 <div style="text-align:right; margin-left:15px; flex-shrink:0;">
                     <div style="font-size:11px; font-weight:700; color:${warnaDeadline}; text-transform:uppercase;">${labelWaktu}</div>
-                    <a href="kegiatan.html?id=${k.id}" style="font-size:12px; color:#2563eb; text-decoration:none; font-weight:600;">Workspace &rarr;</a>
+                    <a href="kegiatan.html?id=${k.id}" class="btn-primary" style="font-size:11px; padding:5px 10px; display:inline-block; margin-top:5px; background:var(--primary); text-decoration:none;">Workspace &rarr;</a>
                 </div>
             </div>
         `;

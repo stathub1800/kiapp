@@ -66,23 +66,20 @@
             <div>
                 <div class="card" style="border-top: 4px solid var(--secondary); margin-bottom: 20px;">
                     <p class="beranda-section-title">⚡ Quick Input: Rencana Pekan Ini</p>
-                    <form id="quickInputForm" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end;">
-                        <div>
-                            <label style="font-size: 11px;">Nama Pekerjaan</label>
-                            <input type="text" id="q-nama" placeholder="Contoh: Koordinasi SBR..." required style="margin:0;">
-                        </div>
-                        <div>
-                            <label style="font-size: 11px;">Target</label>
-                            <div style="display: flex; gap: 5px;">
-                                <input type="number" id="q-jumlah" value="1" style="margin:0; width: 50px;">
-                                <input type="text" id="q-satuan" placeholder="Dok" style="margin:0;">
-                            </div>
-                        </div>
-                        <div>
-                            <label style="font-size: 11px;">Deadline</label>
-                            <input type="date" id="q-deadline" required style="margin:0;">
-                        </div>
-                        <button type="submit" class="btn-primary" style="margin:0; padding: 10px 20px;">+ Tambah</button>
+                    <form id="quickInputForm" style="display: flex; flex-direction: column; gap: 10px;">
+                    <input type="text" id="q-nama" placeholder="Nama Pekerjaan (Contoh: Koordinasi SBR...)" required style="width: 100%; font-weight: bold; padding: 10px;">
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <select id="q-triwulan" required style="flex: 1; padding: 8px;"><option value="">-- Memuat Wadah... --</option></select>
+                        <select id="q-kpi" required style="flex: 2; padding: 8px;"><option value="">-- Memuat KPI / Rencana Kinerja... --</option></select>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="q-jumlah" value="1" placeholder="Target" required style="width: 80px; padding: 8px;">
+                        <input type="text" id="q-satuan" placeholder="Satuan (Dok/Kec)" required style="width: 120px; padding: 8px;">
+                        <input type="date" id="q-deadline" required style="flex: 1; padding: 8px;">
+                        <button type="submit" class="btn-primary" style="flex: 1; padding: 10px;">+ Tambah ke To-Do List</button>
+                    </div>
                     </form>
                 </div>
 

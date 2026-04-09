@@ -44,12 +44,8 @@ async function loadKegiatanList() {
     tableBody.innerHTML = html;
 }
 
-// Tombol Tambah Kegiatan Baru
+// Tombol Tambah Kegiatan Baru diarahkan kembali ke Dashboard (Quick Input)
 document.getElementById('btnTambahKegiatan').addEventListener('click', () => {
-    window.location.href = `kegiatan.html?triwulan_id=${triwulanId}`;
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadTriwulanInfo();
-    loadKegiatanList();
+    alert("Silakan gunakan 'Quick Input' di Beranda Dashboard untuk membuat To-Do List baru agar terdata sempurna.");
+    window.location.href = `dashboard.html`;
 });
