@@ -19,9 +19,18 @@
         .tab-content.active { display: block; }
         
         .area-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
-        .badge-kpi { background: #fee2e2; color: #991b1b; }
-        .badge-rutin { background: #e0e7ff; color: #3730a3; }
+        .badge-kpi     { background: #fee2e2; color: #991b1b; }
+        .badge-rutin   { background: #e0e7ff; color: #3730a3; }
         .badge-inovasi { background: #dcfce7; color: #166534; }
+
+        /* ── Beranda card section ── */
+        .beranda-section { margin-bottom: 24px; }
+        .beranda-section-title {
+            font-size: 13px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #64748b;
+            margin: 0 0 12px 0; padding-bottom: 6px;
+            border-bottom: 1px solid #e2e8f0;
+        }
     </style>
 </head>
 <body>
@@ -37,17 +46,83 @@
     </div>
 
     <div class="container">
-        
+
         <div class="tab-container">
-            <button class="tab-btn active" onclick="openTab('tab-arsitektur', this)">1. Arsitektur (Proyek)</button>
+            <!-- TAB BARU: Beranda sebagai tab pertama -->
+            <button class="tab-btn active" onclick="openTab('tab-beranda', this)">🏠 Beranda</button>
+            <button class="tab-btn" onclick="openTab('tab-arsitektur', this)">1. Arsitektur (Proyek)</button>
             <button class="tab-btn" onclick="openTab('tab-rencana', this)">2. Rencana (Kalender)</button>
             <button class="tab-btn" onclick="openTab('tab-eksekusi', this)">3. Eksekusi (Kanban)</button>
             <button class="tab-btn" onclick="openTab('tab-arsip', this)">4. Arsip (Selesai)</button>
         </div>
 
-        <div id="tab-arsitektur" class="tab-content active">
+        <!-- ================================================ -->
+        <!-- TAB BARU: BERANDA                                 -->
+        <!-- ================================================ -->
+        <div id="tab-beranda" class="tab-content active">
+
+            <!-- Sapaan -->
+            <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+                                     color: white; border: none; margin-bottom: 20px;">
+                <div style="font-size: 13px; opacity: 0.8;" id="beranda-tanggal">Memuat...</div>
+                <div style="font-size: 22px; font-weight: 700; margin: 4px 0;" id="beranda-sapaan">Selamat datang</div>
+                <div style="font-size: 13px; opacity: 0.8;">Berikut ringkasan pekerjaan Anda hari ini.</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+                <!-- Kolom Kiri -->
+                <div>
+                    <!-- Alert Deadline -->
+                    <div class="card">
+                        <p class="beranda-section-title">🔴 Deadline Mendekat (≤ 3 hari)</p>
+                        <div id="beranda-deadline">
+                            <div style="color:#94a3b8; font-size:13px;">Memeriksa deadline...</div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Tanpa Bukti -->
+                    <div class="card">
+                        <p class="beranda-section-title">🟡 Belum Ada Bukti Dukung</p>
+                        <div id="beranda-tanpa-bukti">
+                            <div style="color:#94a3b8; font-size:13px;">Memeriksa lampiran...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan -->
+                <div>
+                    <!-- Progress KPI -->
+                    <div class="card">
+                        <p class="beranda-section-title">📊 Progress KPI Keseluruhan</p>
+                        <div id="beranda-kpi">
+                            <div style="color:#94a3b8; font-size:13px;">Menghitung progress...</div>
+                        </div>
+                    </div>
+
+                    <!-- Shortcut Triwulan -->
+                    <div class="card">
+                        <p class="beranda-section-title">📁 Proyek Tahun Ini</p>
+                        <div id="beranda-triwulan">
+                            <div style="color:#94a3b8; font-size:13px;">Memuat proyek...</div>
+                        </div>
+                        <a href="#" onclick="openTab('tab-arsitektur', document.querySelectorAll('.tab-btn')[1]); return false;"
+                           style="display:block; text-align:center; margin-top:10px; font-size:12px;
+                                  color:#3b82f6; text-decoration:none;">
+                            + Kelola semua proyek →
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================================================ -->
+        <!-- TAB ARSITEKTUR (tidak diubah)                     -->
+        <!-- ================================================ -->
+        <div id="tab-arsitektur" class="tab-content">
             <div class="card">
-                <h3 style="margin-top:0;">Struktur Waktu & Proyek</h3>
+                <h3 style="margin-top:0;">Struktur Waktu &amp; Proyek</h3>
                 <p style="color: var(--text-muted); font-size: 14px;">Atur wadah utama (Triwulan/Semester) untuk mengelompokkan pekerjaan Anda.</p>
                 <div id="triwulanList">Loading data...</div>
                 
@@ -65,10 +140,16 @@
             </div>
         </div>
 
+        <!-- ================================================ -->
+        <!-- TAB RENCANA (tidak diubah)                        -->
+        <!-- ================================================ -->
         <div id="tab-rencana" class="tab-content">
             <div id="calendar" style="background: white; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);"></div>
         </div>
 
+        <!-- ================================================ -->
+        <!-- TAB EKSEKUSI (tidak diubah)                       -->
+        <!-- ================================================ -->
         <div id="tab-eksekusi" class="tab-content">
             <div class="card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
                 <div class="kanban-board" id="kanbanContainer">
@@ -88,12 +169,15 @@
             </div>
         </div>
 
+        <!-- ================================================ -->
+        <!-- TAB ARSIP (tidak diubah)                          -->
+        <!-- ================================================ -->
         <div id="tab-arsip" class="tab-content">
             <div class="card">
                 <h3 style="margin-top:0; color: var(--success);">Arsip Pekerjaan Selesai</h3>
                 <p style="color: var(--text-muted); font-size: 14px;">Semua dokumentasi pekerjaan yang sudah tuntas tersimpan aman di sini.</p>
                 <div id="col-Selesai" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -103,5 +187,7 @@
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
+    <!-- File baru: harus di bawah app.js -->
+    <script src="js/dashboard-home.js"></script>
 </body>
 </html>
