@@ -3,26 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Kegiatan - Viewer</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Laporan Proyek Terpadu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        .print-only { display: none; }
+        body { background-color: #cbd5e1; font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 20px; }
+        .kertas-a4 { background: white; max-width: 800px; margin: 0 auto; padding: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 8px; }
+        .kop-surat { text-align: center; border-bottom: 4px solid #1e293b; padding-bottom: 15px; margin-bottom: 30px; }
+        .kop-surat h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; }
+        .kop-surat h2 { margin: 5px 0 0 0; font-size: 16px; color: #475569; font-weight: 400; }
+        
+        .meta-tabel { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .meta-tabel td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: top; }
+        .meta-tabel td.label { font-weight: 600; color: #334155; width: 30%; }
+        
+        .section-title { background: #f1f5f9; padding: 10px 15px; border-left: 4px solid #2563eb; font-size: 15px; font-weight: 700; color: #1e3a8a; margin-top: 30px; margin-bottom: 15px; }
+        
+        /* Timeline Logbook */
+        .timeline { border-left: 2px solid #cbd5e1; margin-left: 10px; padding-left: 20px; margin-bottom: 30px; }
+        .timeline-item { position: relative; margin-bottom: 20px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #2563eb; border-radius: 50%; }
+        .tl-date { font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 5px; }
+        .tl-desc { color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; white-space: pre-wrap; }
+
+        .print-btn { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        
         @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .page-a4 { margin: 0; box-shadow: none; width: 100%; padding: 0; }
-            body { background: white; }
+            body { background: white; padding: 0; }
+            .kertas-a4 { box-shadow: none; padding: 0; width: 100%; max-width: 100%; border-radius: 0; }
+            .print-btn { display: none; }
+            .iframe-container { page-break-inside: avoid; margin-bottom: 30px; }
+            .link-bantuan { display: none !important; }
         }
     </style>
 </head>
-<body style="background-color: #cbd5e1;"> 
+<body>
 
-    <div class="no-print" style="background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;">
-        <strong>Mode Viewer</strong> - Tampilan Resmi Laporan. <button onclick="window.print()" class="btn-primary" style="margin-left: 20px; background: white; color: var(--primary);">Cetak / Export PDF</button>
-    </div>
+    <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
 
-    <div class="page-a4" id="viewerContent">
+    <div class="kertas-a4" id="viewerContent">
         <div style="text-align: center; padding: 50px;">Memuat dokumen resmi...</div>
     </div>
 
@@ -31,100 +49,93 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        const viewerContent = document.getElementById('viewerContent');
 
-        // FUNGSI CERDAS: Mengubah Link Google Drive biasa menjadi Link Embed (Preview)
+        // Fungsi Cerdas Embed Google Drive Anda
         function getEmbedUrl(url) {
-            if (url.includes('drive.google.com/file/d/')) {
-                return url.replace(/\/view.*$/, '/preview'); // Google Drive Files
-            } else if (url.includes('docs.google.com')) {
-                return url.replace(/\/edit.*$/, '/preview'); // Google Docs/Sheets/Slides
-            }
+            if (!url) return url;
+            if (url.includes('drive.google.com/file/d/')) return url.replace(/\/view.*$/, '/preview');
+            if (url.includes('docs.google.com')) return url.replace(/\/edit.*$/, '/preview');
             return url;
         }
 
         async function loadViewerData() {
             if (!token) return;
 
-            const { data: kegiatanData } = await supabase.from('kegiatan').select('*').eq('share_token', token).single();
-            if (!kegiatanData) { viewerContent.innerHTML = `<h3>Laporan tidak ditemukan.</h3>`; return; }
+            // Tarik data lengkap
+            const { data: keg } = await supabase.from('kegiatan').select('*, triwulan(nama)').eq('share_token', token).single();
+            if (!keg) return;
 
-            const { data: buktiData } = await supabase.from('bukti_dukung').select('*').eq('kegiatan_id', kegiatanData.id).order('created_at', { ascending: true });
+            const { data: logbook } = await supabase.from('progres_harian').select('*').eq('kegiatan_id', keg.id).order('tanggal', { ascending: true });
+            const { data: bukti } = await supabase.from('bukti_dukung').select('*').eq('kegiatan_id', keg.id).order('created_at', { ascending: true });
+
+            const tglDeadline = new Date(keg.waktu_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
             let html = `
-                <div style="border-bottom: 3px solid black; padding-bottom: 15px; margin-bottom: 30px; text-align: center;">
-                    <h1 style="margin: 0; font-size: 24px; text-transform: uppercase;">LAPORAN PELAKSANAAN KEGIATAN</h1>
-                    <h2 style="margin: 5px 0 0 0; font-size: 18px; color: var(--text-muted);">${kegiatanData.nama_kegiatan}</h2>
+                <div class="kop-surat">
+                    <h1>LAPORAN PELAKSANAAN KEGIATAN</h1>
+                    <h2>BADAN PUSAT STATISTIK PROVINSI LAMPUNG</h2>
                 </div>
 
-                <table style="width: 100%; margin-bottom: 30px; border-collapse: collapse; font-size: 15px;">
-                    <tr><td style="width: 200px; padding: 8px 0; font-weight: bold;">Rencana Kerja</td><td style="padding: 8px 0;">: ${kegiatanData.rencana_kerja_kipapp}</td></tr>
-                    <tr><td style="padding: 8px 0; font-weight: bold;">Periode Pelaksanaan</td><td style="padding: 8px 0;">: ${kegiatanData.waktu_pelaksanaan} s.d ${kegiatanData.waktu_selesai}</td></tr>
-                    <tr><td style="padding: 8px 0; font-weight: bold;">Status Terakhir</td><td style="padding: 8px 0;">: <span style="background: #e0f2fe; color: #0284c7; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${kegiatanData.status || 'Selesai'}</span></td></tr>
+                <table class="meta-tabel">
+                    <tr><td class="label">Nama Kegiatan</td><td>: ${keg.nama_kegiatan}</td></tr>
+                    <tr><td class="label">Rencana Kinerja (KPI)</td><td>: ${keg.rencana_kerja_kipapp || '-'}</td></tr>
+                    <tr><td class="label">Periode / Wadah</td><td>: ${keg.triwulan?.nama || 'Tahunan'}</td></tr>
+                    <tr><td class="label">Target Output</td><td>: ${keg.jumlah_target || 1} ${keg.satuan_target || 'Dokumen'}</td></tr>
+                    <tr><td class="label">Deadline</td><td>: ${tglDeadline}</td></tr>
                 </table>
 
-                <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px;">A. Deskripsi Kegiatan</h3>
-                <p style="text-align: justify; line-height: 1.8; white-space: pre-wrap;">${kegiatanData.deskripsi || '-'}</p>
+                <div class="section-title">A. Ringkasan Pelaksanaan (Logbook Harian)</div>
             `;
 
-            if (kegiatanData.daftar_pertanyaan) {
-                html += `
-                    <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">B. Daftar Pertanyaan / Catatan Khusus</h3>
-                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid var(--warning); white-space: pre-wrap;">${kegiatanData.daftar_pertanyaan}</div>
-                `;
-            }
-
-            html += `<h3 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-top: 30px;">${kegiatanData.daftar_pertanyaan ? 'C' : 'B'}. Lampiran Bukti Dukung & Tautan</h3>`;
-            
-            if (!buktiData || buktiData.length === 0) {
-                html += `<p><i>Tidak ada lampiran dokumen.</i></p>`;
+            // RENDER LOGBOOK
+            if (!logbook || logbook.length === 0) {
+                html += `<p style="font-size: 14px; font-style: italic; color: #64748b;">Belum ada catatan pelaksanaan harian.</p>`;
             } else {
-                buktiData.forEach((file, index) => {
-                    let preview = '';
-                    
-                    // JIKA ITU ADALAH TAUTAN GOOGLE DRIVE / LINK EKSTERNAL
-                    if (file.file_type === 'link') {
-                        let embedUrl = getEmbedUrl(file.file_url);
-                        
-                        // Jika bisa di-embed (Google Drive/Docs), tampilkan Iframe
-                        if (embedUrl.includes('/preview')) {
-                            preview = `
-                                <iframe src="${embedUrl}" width="100%" height="600px" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 15px;" class="no-print"></iframe>
-                                <div class="no-print" style="margin-top: 10px;">
-                                    <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka Dokumen di Tab Baru (Layar Penuh)</a>
-                                </div>
-                                <p class="print-only"><i>(Tautan dokumen eksternal telah dilampirkan pada sistem pelaporan digital)</i></p>
-                            `;
-                        } else {
-                            // Jika link website biasa (misal: Berita web)
-                            preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Buka Tautan Eksternal &#8599;</a>`;
-                        }
-                    } 
-                    // JIKA ITU ADALAH FILE FISIK (GAMBAR/PDF)
-                    else if (file.file_type && file.file_type.includes('image')) {
-                        preview = `<img src="${file.file_url}" style="max-width: 100%; border: 1px solid #ccc; margin-top: 10px; border-radius: 4px;">`;
-                    } else if (file.file_type === 'application/pdf' || file.file_name.toLowerCase().endsWith('.pdf')) {
-                        preview = `
-                            <iframe src="${file.file_url}" width="100%" height="600px" style="border: 1px solid #ccc; border-radius: 8px; margin-top: 15px;" class="no-print"></iframe>
-                            <div class="no-print" style="margin-top: 10px;">
-                                <a href="${file.file_url}" target="_blank" class="btn-primary" style="background-color: var(--secondary); font-size: 12px;">Buka PDF di Tab Baru</a>
-                            </div>
-                            <p class="print-only"><i>(Dokumen PDF terlampir pada sistem)</i></p>
-                        `;
-                    } else {
-                        preview = `<br><a href="${file.file_url}" target="_blank" class="no-print btn-primary" style="margin-top:10px;">Download Dokumen Asli (${file.file_name.split('.').pop().toUpperCase()})</a>`;
-                    }
-
+                html += `<div class="timeline">`;
+                logbook.forEach(log => {
+                    const tgl = new Date(log.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                     html += `
-                        <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                            <div style="font-weight: bold; background: #e2e8f0; padding: 8px 15px; border-radius: 4px;">Lampiran ${index + 1}: ${file.penjelasan || 'Dokumen'}</div>
-                            ${preview}
+                        <div class="timeline-item">
+                            <div class="tl-date">${tgl}</div>
+                            <div class="tl-desc">${log.deskripsi}</div>
                         </div>
                     `;
                 });
+                html += `</div>`;
             }
-            viewerContent.innerHTML = html;
+
+            html += `<div class="section-title">B. Lampiran & Dokumen Bukti</div>`;
+
+            // RENDER BUKTI DUKUNG (Cerdas)
+            if (!bukti || bukti.length === 0) {
+                html += `<p style="font-size: 14px; font-style: italic; color: #64748b;">Tidak ada lampiran dokumen.</p>`;
+            } else {
+                bukti.forEach((file, index) => {
+                    let embedUrl = getEmbedUrl(file.file_url);
+                    
+                    html += `
+                        <div class="iframe-container" style="margin-bottom: 40px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                            <div style="background: #f8fafc; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #e2e8f0; font-size: 14px;">
+                                Lampiran ${index + 1}: ${file.penjelasan}
+                            </div>
+                    `;
+
+                    // Selalu usahakan Iframe jika itu Google Drive
+                    if (embedUrl.includes('/preview')) {
+                        html += `<iframe src="${embedUrl}" width="100%" height="650px" style="border: none; display: block;"></iframe>`;
+                    } else if (file.file_url.match(/\.(jpeg|jpg|gif|png)$/) != null) {
+                        html += `<img src="${file.file_url}" style="width: 100%; display: block;">`;
+                    } else {
+                        html += `<div style="padding: 30px; text-align: center;"><a href="${file.file_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: bold; font-size: 16px;">Buka Tautan Lampiran Eksternal &rarr;</a></div>`;
+                    }
+
+                    html += `</div>`;
+                });
+            }
+
+            document.getElementById('viewerContent').innerHTML = html;
         }
+
         document.addEventListener('DOMContentLoaded', loadViewerData);
     </script>
 </body>

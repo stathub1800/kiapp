@@ -3,164 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Kegiatan - Laporan KPI</title>
+    <title>Workspace Kegiatan</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .logbook-item { border-left: 3px solid var(--primary); padding-left: 15px; margin-bottom: 15px; background: #f8fafc; padding-top: 10px; padding-bottom: 10px; padding-right: 10px; border-radius: 0 8px 8px 0; }
+        .logbook-date { font-size: 12px; color: var(--text-muted); font-weight: bold; margin-bottom: 5px; }
+    </style>
 </head>
 <body>
 
-    <div style="background-color: var(--primary); color: white; padding: 15px;">
+    <div style="background-color: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 100;">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
-            <h2 style="margin: 0;">
-                <a href="dashboard.html" style="color: white; text-decoration: none;">&larr; Kembali</a> | Form Kegiatan
-            </h2>
+            <h2 style="margin: 0;"><a href="dashboard.html" style="color: white; text-decoration: none;">&larr; Beranda</a> | Workspace</h2>
+            <div id="headerStatus"></div>
         </div>
     </div>
 
     <div class="container">
 
-        <!-- ================================================ -->
-        <!-- FORM KEGIATAN                                     -->
-        <!-- ================================================ -->
-        <div class="card">
-            <h3 id="formTitle">Tambah Kegiatan Baru</h3>
+        <div class="card" id="panelPerencanaan">
+            <h3 style="color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px;">🎯 Setup Rencana Pekerjaan (To-Do)</h3>
             <form id="formKegiatan">
-                <label for="nama_kegiatan">Nama Kegiatan</label>
-                <input type="text" id="nama_kegiatan" required placeholder="Contoh: Rapat Koordinasi SBR">
-
-                <label for="jenis_pekerjaan">Kategori / Jenis Pekerjaan</label>
-                <select id="jenis_pekerjaan" required>
-                    <option value="KPI Utama">KPI Utama (Wajib)</option>
-                    <option value="Tugas Rutin">Tugas Rutin / Administratif</option>
-                    <option value="Tugas Tambahan">Tugas Tambahan / Ad-Hoc</option>
-                    <option value="Inovasi">Pengembangan / Inovasi</option>
-                </select>
+                <label>Nama Pekerjaan / Proyek</label>
+                <input type="text" id="nama_kegiatan" required placeholder="Contoh: Pemantauan Ground Check SBR">
 
                 <div style="display: flex; gap: 15px;">
                     <div style="flex: 1;">
-                        <label for="waktu_pelaksanaan">Tanggal Mulai</label>
-                        <input type="date" id="waktu_pelaksanaan" required>
+                        <label>Wadah Triwulan</label>
+                        <select id="triwulan_id" required><option value="">-- Memuat Triwulan... --</option></select>
                     </div>
                     <div style="flex: 1;">
-                        <label for="waktu_selesai">Tanggal Selesai</label>
+                        <label>Rencana Kinerja (KPI)</label>
+                        <select id="rencana_kerja" required><option value="">-- Memuat KPI... --</option></select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label>Target Kuantitas</label>
+                        <input type="number" id="jumlah_target" value="1" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Satuan Target</label>
+                        <input type="text" id="satuan_target" value="Dokumen Laporan" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Deadline Selesai</label>
                         <input type="date" id="waktu_selesai" required>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
-                        <label for="status">Status Kegiatan</label>
-                        <select id="status" required>
-                            <option value="Persiapan">Persiapan</option>
-                            <option value="Pelaksanaan">Pelaksanaan</option>
-                            <option value="Pelaporan">Pelaporan</option>
-                            <option value="Monitoring dan Evaluasi">Monitoring dan Evaluasi</option>
-                            <option value="Selesai">Selesai</option>
-                        </select>
-                    </div>
-                </div>
-
-                <label for="rencana_kerja">Rencana Kerja KIPAPP</label>
-                <select id="rencana_kerja" required>
-                    <option value="">-- Pilih Rencana Kerja --</option>
-                </select>
-
-                <label for="deskripsi">Deskripsi Laporan</label>
-                <textarea id="deskripsi" rows="4" placeholder="Ceritakan progres kegiatan..."></textarea>
-
-                <label for="daftar_pertanyaan">Daftar Pertanyaan / Catatan Khusus (Opsional)</label>
-                <textarea id="daftar_pertanyaan" rows="2" placeholder="Kendala atau catatan lapangan..."></textarea>
-
-                <button type="submit" class="btn-primary" id="btnSimpanKegiatan">Simpan Kegiatan</button>
+                <button type="submit" class="btn-primary" style="width: 100%; font-size: 16px; margin-top: 10px;">Simpan Rencana Pekerjaan</button>
             </form>
         </div>
 
-        <!-- ================================================ -->
-        <!-- PANEL BUKTI DUKUNG                                -->
-        <!-- ================================================ -->
-        <div class="card" id="panelBuktiDukung" style="display: none;">
-            <h3>Bukti Dukung &amp; Lampiran</h3>
-
-            <!-- Instruksi singkat -->
-            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px;
-                        padding:12px 16px; margin-bottom:20px; font-size:13px; color:#1e40af;">
-                <strong>Cara melampirkan dokumen:</strong><br>
-                1. Klik <strong>"Buka Folder Drive"</strong> → cari file yang ingin dilampirkan<br>
-                2. Klik kanan file → <strong>"Copy link"</strong> (atau buka file → salin URL dari browser)<br>
-                3. Paste link ke kolom di bawah → klik <strong>"Lampirkan"</strong>
+        <div id="panelWorkspace" style="display: none;">
+            
+            <div class="card" style="background: linear-gradient(to right, #1e3a8a, #312e81); color: white;">
+                <h2 id="wsTitle" style="margin-top: 0; margin-bottom: 5px;">Memuat...</h2>
+                <div style="opacity: 0.8; font-size: 14px;" id="wsMeta">Target: - | Deadline: -</div>
             </div>
 
-            <!-- Tombol shortcut ke Drive -->
-            <div style="margin-bottom: 20px;">
-                <button id="btnBukaDrive" class="btn-primary"
-                        style="background: #1967d2; display: inline-flex; align-items: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                        <path d="M6.28 3l5.72 9.9L6.28 21H2l5.72-9.9L2 3h4.28zm5.44 0h4.28l5.72 9.9-5.72 9.1H11.72l5.72-9.1L11.72 3z"/>
-                    </svg>
-                    Buka Folder Drive
-                </button>
-                <span style="font-size:12px; color:var(--text-muted); margin-left:10px;">
-                    Buka Drive di tab baru, lalu salin link file
-                </span>
-            </div>
+            <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 20px;">
+                
+                <div>
+                    <div class="card">
+                        <h3 style="margin-top: 0; color: var(--secondary);">📝 Catatan Progres Harian</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: -10px;">Ketikan apa yang Anda kerjakan hari ini. Ini akan otomatis dirangkum jadi laporan akhir.</p>
+                        
+                        <form id="formProgres" style="margin-bottom: 20px;">
+                            <textarea id="teksProgres" rows="3" placeholder="Contoh: Hari ini melakukan rapat persiapan dengan tim lapangan..." required style="width: 100%;"></textarea>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <input type="date" id="tanggalProgres" required style="flex: 1; margin: 0;">
+                                <button type="submit" class="btn-primary" style="flex: 2; margin: 0; background: var(--secondary);">+ Catat Progres</button>
+                            </div>
+                        </form>
 
-            <!-- Form paste link -->
-            <div style="border: 2px solid var(--border); padding: 20px; border-radius: 8px;
-                        background-color: #f8fafc; margin-bottom: 20px;">
+                        <div id="listProgres">
+                            </div>
+                    </div>
+                </div>
 
-                <h4 style="margin-top: 0; color: var(--primary);">Lampirkan Dokumen</h4>
+                <div>
+                    <div class="card" id="panelBuktiDukung">
+                        </div>
+                    
+                    <div class="card" style="border-top: 4px solid var(--success);">
+                        <h3 style="margin-top: 0; color: var(--success);">🖨️ Cetak / Bagikan Laporan</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Sistem telah menyusun semua progres harian dan dokumen Anda menjadi 1 Laporan Resmi.</p>
+                        <button id="btnGenerateLink" class="btn-primary" style="width: 100%; background: var(--success);">Lihat Laporan Lengkap</button>
+                    </div>
+                </div>
 
-                <!-- Input URL -->
-                <label for="urlLink" style="font-size:13px; font-weight:600; color:var(--text-muted);">
-                    Link Dokumen (dari Google Drive / URL lainnya)
-                </label>
-                <input type="url" id="urlLink"
-                       placeholder="Paste link dokumen di sini..."
-                       style="width: 100%; margin-bottom: 4px; box-sizing: border-box;">
-
-                <!-- Area preview deteksi otomatis -->
-                <div id="previewNama" style="margin-bottom: 12px;"></div>
-
-                <!-- Input nama/penjelasan -->
-                <label for="namaLink" style="font-size:13px; font-weight:600; color:var(--text-muted);">
-                    Nama / Penjelasan Dokumen
-                </label>
-                <input type="text" id="namaLink"
-                       placeholder="Contoh: SK Tim, Foto Kegiatan, Notulen Rapat"
-                       style="width: 100%; margin-bottom: 15px; box-sizing: border-box;">
-
-                <button class="btn-primary" id="btnSimpanLink" style="width: 100%;">
-                    + Lampirkan Dokumen Ini
-                </button>
-                <p id="linkStatus"
-                   style="font-size:13px; color:var(--text-muted); margin-top:10px; text-align:center;"></p>
-            </div>
-
-            <!-- Daftar lampiran tersimpan -->
-            <div id="listBuktiDukung"></div>
-        </div>
-
-        <!-- ================================================ -->
-        <!-- PANEL SHARE                                       -->
-        <!-- ================================================ -->
-        <div class="card" id="panelShare"
-             style="display: none; margin-top: 20px; border-left: 4px solid var(--success);">
-            <h3>Bagikan Laporan (Viewer)</h3>
-            <p style="color: var(--text-muted); font-size: 14px;">
-                Buat link unik untuk membagikan laporan ini ke pimpinan secara Read-Only.
-            </p>
-            <button id="btnGenerateLink" class="btn-primary"
-                    style="background-color: var(--success);">Generate Share Link</button>
-            <div id="shareLinkContainer" style="display: none; margin-top: 15px;">
-                <input type="text" id="shareLinkUrl" readonly
-                       style="width: 100%; padding: 10px; background: #eef2f3; border: 1px solid #ccc;
-                              border-radius: 4px; font-weight: bold; cursor: copy; box-sizing: border-box;"
-                       onclick="this.select(); document.execCommand('copy'); alert('Link disalin!');">
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">
-                    Klik link di atas untuk menyalin, atau
-                    <a href="#" id="openShareLink" target="_blank"
-                       style="color: var(--secondary);">buka di tab baru</a>.
-                </p>
             </div>
         </div>
 
@@ -168,9 +103,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
     <script src="js/kegiatan.js"></script>
-    <script src="js/bukti.js"></script>
-    <script src="js/share.js"></script>
+    <script src="js/bukti.js"></script> <script src="js/share.js"></script>
 </body>
 </html>
