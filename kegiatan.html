@@ -16,7 +16,7 @@
     <div style="background-color: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 100;">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
             <h2 style="margin: 0;"><a href="dashboard.html" style="color: white; text-decoration: none;">&larr; Beranda</a> | Workspace</h2>
-            <div id="headerStatus"></div>
+            <div id="headerStatus"></div> 
         </div>
     </div>
 
@@ -80,14 +80,28 @@
                             </div>
                         </form>
 
-                        <div id="listProgres">
-                            </div>
+                        <div id="listProgres"></div>
                     </div>
                 </div>
 
                 <div>
                     <div class="card" id="panelBuktiDukung">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="margin: 0; color: var(--primary);">📎 Dokumen Asli / Drive</h3>
+                            <button id="btnBukaDrive" class="btn-primary" style="background: #0ea5e9; padding: 5px 10px; font-size: 12px; margin: 0; border: none; cursor: pointer;">Buka GDrive &rarr;</button>
                         </div>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">Salin link file dari Drive Anda ke sini.</p>
+                        
+                        <input type="url" id="urlLink" placeholder="Paste link dokumen di sini..." style="width: 100%; margin-bottom: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <div id="previewNama" style="margin-bottom: 5px;"></div>
+                        <input type="text" id="namaLink" placeholder="Nama Dokumen (Contoh: Laporan SBR)" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        
+                        <button class="btn-primary" id="btnSimpanLink" style="width: 100%;">Lampirkan Dokumen</button>
+                        <p id="linkStatus" style="font-size:12px; color:var(--success); margin-top:5px; text-align:center;"></p>
+                        <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                        
+                        <div id="listBuktiDukung"></div>
+                    </div>
                     
                     <div class="card" style="border-top: 4px solid var(--success);">
                         <h3 style="margin-top: 0; color: var(--success);">🖨️ Cetak / Bagikan Laporan</h3>
@@ -104,6 +118,7 @@
     <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/kegiatan.js"></script>
-    <script src="js/bukti.js"></script> <script src="js/share.js"></script>
+    <script src="js/bukti.js"></script> 
+    <script src="js/share.js"></script>
 </body>
 </html>

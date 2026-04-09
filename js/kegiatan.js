@@ -10,18 +10,15 @@ const panelWorkspace = document.getElementById('panelWorkspace');
 document.addEventListener('DOMContentLoaded', async () => {
     await loadDropdowns();
     
-    // Set tanggal hari ini sebagai default di input progres
     const today = new Date().toISOString().split('T')[0];
     if(document.getElementById('tanggalProgres')) document.getElementById('tanggalProgres').value = today;
 
     if (kegiatanId) {
-        // MODE WORKSPACE (Data sudah ada)
         panelPerencanaan.style.display = 'none';
         panelWorkspace.style.display = 'block';
         loadWorkspaceData();
         loadProgresHarian();
     } else {
-        // MODE PERENCANAAN (Bikin Baru)
         panelPerencanaan.style.display = 'block';
         panelWorkspace.style.display = 'none';
     }
@@ -60,17 +57,17 @@ document.getElementById('formKegiatan')?.addEventListener('submit', async (e) =>
         satuan_target: document.getElementById('satuan_target').value,
         waktu_selesai: document.getElementById('waktu_selesai').value,
         status: 'Persiapan',
-        jenis_pekerjaan: 'KPI Utama', // Default
-        waktu_pelaksanaan: new Date().toISOString().split('T')[0] // Mulai hari ini
+        jenis_pekerjaan: 'KPI Utama', 
+        waktu_pelaksanaan: new Date().toISOString().split('T')[0] 
     };
 
     const { data, error } = await supabase.from('kegiatan').insert([payload]).select().single();
     if (error) alert("Error: " + error.message);
-    else window.location.href = `kegiatan.html?id=${data.id}`; // Langsung buka Workspacenya
+    else window.location.href = `kegiatan.html?id=${data.id}`; 
 });
 
 // ==========================================
-// LOAD DATA WORKSPACE
+// LOAD DATA WORKSPACE & DROPDOWN STATUS
 // ==========================================
 async function loadWorkspaceData() {
     const { data, error } = await supabase.from('kegiatan').select('*, triwulan(nama)').eq('id', kegiatanId).single();
@@ -78,29 +75,28 @@ async function loadWorkspaceData() {
 
     document.getElementById('wsTitle').innerText = data.nama_kegiatan;
     
-    // Format Tanggal Indonesia
     const tglDeadline = new Date(data.waktu_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    document.getElementById('wsMeta').innerText = `Target: ${data.jumlah_target} ${data.satuan_target} | Wadah: ${data.triwulan?.nama} | Deadline: ${tglDeadline}`;
+    document.getElementById('wsMeta').innerText = `Target: ${data.jumlah_target} ${data.satuan_target} | Wadah: ${data.triwulan?.nama || 'Tahunan'} | Deadline: ${tglDeadline}`;
     
-    document.getElementById('headerStatus').innerHTML = `<span style="background: white; color: var(--primary); padding: 5px 15px; border-radius: 20px; font-weight: bold;">Status: ${data.status}</span>`;
-    
-    // Inject HTML Panel Bukti Dukung Anda ke Kolom Kanan agar script lama Anda jalan sempurna
-    document.getElementById('panelBuktiDukung').innerHTML = `
-        <h3 style="margin-top: 0; color: var(--primary);">📎 Dokumen Asli / Drive</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-top: -10px;">Salin link file dari Drive Anda ke sini.</p>
-        <input type="url" id="urlLink" placeholder="Paste link dokumen di sini..." style="width: 100%; margin-bottom: 5px; padding: 8px;">
-        <div id="previewNama" style="margin-bottom: 5px;"></div>
-        <input type="text" id="namaLink" placeholder="Nama Dokumen (Contoh: Laporan SBR)" style="width: 100%; margin-bottom: 10px; padding: 8px;">
-        <button class="btn-primary" id="btnSimpanLink" style="width: 100%;">Lampirkan Dokumen</button>
-        <p id="linkStatus" style="font-size:12px; color:var(--success); margin-top:5px; text-align:center;"></p>
-        <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-        <div id="listBuktiDukung"></div>
+    // Fitur Dropdown Status agar bisa diklik dari Header
+    document.getElementById('headerStatus').innerHTML = `
+        <select id="ubahStatusKegiatan" style="padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 2px solid white; background: var(--primary); color: white; outline: none; cursor: pointer; font-size: 14px;">
+            <option value="Persiapan" ${data.status === 'Persiapan' ? 'selected' : ''}>Status: Persiapan</option>
+            <option value="Pelaksanaan" ${data.status === 'Pelaksanaan' ? 'selected' : ''}>Status: Pelaksanaan</option>
+            <option value="Pelaporan" ${data.status === 'Pelaporan' ? 'selected' : ''}>Status: Pelaporan</option>
+            <option value="Monitoring dan Evaluasi" ${data.status === 'Monitoring dan Evaluasi' ? 'selected' : ''}>Status: Monev</option>
+            <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Status: Selesai</option>
+        </select>
     `;
-    
-    // Panggil ulang event listener bukti.js karena elemennya baru dibuat
-    if(typeof btnSimpanLink !== 'undefined' && document.getElementById('btnSimpanLink')){
-        document.getElementById('btnSimpanLink').addEventListener('click', btnSimpanLink.onclick);
-    }
+
+    document.getElementById('ubahStatusKegiatan').addEventListener('change', async (e) => {
+        const newStatus = e.target.value;
+        const selectEl = e.target;
+        selectEl.disabled = true; // Kunci sebentar saat menyimpan
+        const { error: updErr } = await supabase.from('kegiatan').update({ status: newStatus }).eq('id', kegiatanId);
+        if(updErr) alert("Gagal update status!");
+        selectEl.disabled = false;
+    });
 }
 
 // ==========================================
@@ -121,6 +117,8 @@ document.getElementById('formProgres')?.addEventListener('submit', async (e) => 
     if (!error) {
         document.getElementById('teksProgres').value = '';
         loadProgresHarian();
+    } else {
+        alert("Gagal simpan progres: " + error.message);
     }
     btn.innerText = '+ Catat Progres';
 });
