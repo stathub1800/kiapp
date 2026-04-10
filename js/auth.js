@@ -42,3 +42,24 @@ async function logout() {
     const { error } = await supabase.auth.signOut();
     if (!error) window.location.href = 'index.html';
 }
+// ==========================================
+// SISTEM KEAMANAN: AUTO-LOGOUT (IDLE TIMER)
+// ==========================================
+let idleTime = 0;
+const MAX_IDLE_MINUTES = 30; // Logout otomatis setelah 30 menit tidak ada aktivitas
+
+// Reset timer setiap kali ada pergerakan mouse atau ketikan keyboard
+function resetTimer() { idleTime = 0; }
+document.addEventListener('mousemove', resetTimer);
+document.addEventListener('keypress', resetTimer);
+document.addEventListener('click', resetTimer);
+document.addEventListener('scroll', resetTimer);
+
+// Cek setiap 1 menit
+setInterval(() => {
+    idleTime++;
+    if (idleTime >= MAX_IDLE_MINUTES) {
+        alert("Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan login kembali demi keamanan.");
+        logout(); // Fungsi logout akan dipanggil
+    }
+}, 60000); // 60.000 ms = 1 menit

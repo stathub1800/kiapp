@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Superapp A.R.E.A - Workspace</title>
+    <title>Superapp - Pusat Kendali</title>
     <link rel="stylesheet" href="css/style.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,163 +11,97 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
 
     <style>
-        .tab-container { display: flex; gap: 5px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
-        .tab-btn { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-size: 14px; white-space: nowrap; }
+        .tab-container { display: flex; gap: 5px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; background: #fff; padding: 10px 10px 0 10px; border-radius: 8px 8px 0 0; }
+        .tab-btn { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-size: 14px; white-space: nowrap; transition: 0.3s; }
         .tab-btn:hover { color: var(--primary); background: #f8fafc; border-radius: 6px 6px 0 0; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #f8fafc; border-radius: 6px 6px 0 0; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        .area-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 5px; }
-        .badge-kpi     { background: #fee2e2; color: #991b1b; }
-        .badge-rutin   { background: #e0e7ff; color: #3730a3; }
-        .badge-inovasi { background: #dcfce7; color: #166534; }
-
-        /* ── Beranda card section ── */
-        .beranda-section { margin-bottom: 24px; }
-        .beranda-section-title {
-            font-size: 13px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.05em; color: #64748b;
-            margin: 0 0 12px 0; padding-bottom: 6px;
-            border-bottom: 1px solid #e2e8f0;
-        }
     </style>
 </head>
 <body>
 
-    <div style="background-color: var(--primary); color: white; padding: 15px;">
+    <div style="background-color: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
             <div>
-                <h2 style="margin: 0;">My Workspace</h2>
-                <span style="font-size: 12px; opacity: 0.8;">Powered by A.R.E.A Framework</span>
+                <h2 style="margin: 0;">Pusat Kendali Proyek</h2>
+                <span style="font-size: 12px; opacity: 0.8;">Sistem Manajemen Kinerja & Logbook</span>
             </div>
-            <button onclick="logout()" class="btn-primary" style="background: transparent; border: 1px solid white;">Logout</button>
+            <button onclick="logout()" class="btn-primary" style="background: transparent; border: 1px solid white;">🔒 Keluar Keluar</button>
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" style="margin-top: 20px;">
 
         <div class="tab-container">
-            <!-- TAB BARU: Beranda sebagai tab pertama -->
-            <button class="tab-btn active" onclick="openTab('tab-beranda', this)">🏠 Beranda</button>
-            <button class="tab-btn" onclick="openTab('tab-arsitektur', this)">1. Arsitektur (Proyek)</button>
-            <button class="tab-btn" onclick="openTab('tab-rencana', this)">2. Rencana (Kalender)</button>
-            <button class="tab-btn" onclick="openTab('tab-eksekusi', this)">3. Eksekusi (Kanban)</button>
-            <button class="tab-btn" onclick="openTab('tab-arsip', this)">4. Arsip (Selesai)</button>
+            <button class="tab-btn active" onclick="openTab('tab-dashboard', this)">📊 1. Dashboard Utama</button>
+            <button class="tab-btn" onclick="openTab('tab-target', this)">🎯 2. Input Target</button>
+            <button class="tab-btn" onclick="openTab('tab-realisasi', this)">📝 3. Realisasi (Progres)</button>
+            <button class="tab-btn" onclick="openTab('tab-laporan', this)">🖨️ 4. Report & Laporan</button>
         </div>
 
-        <!-- ================================================ -->
-        <!-- TAB BARU: BERANDA                                 -->
-        <!-- ================================================ -->
-        <div id="tab-beranda" class="tab-content active">
-
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start;">
-            
-            <div>
-                <div class="card" style="border-top: 4px solid var(--secondary); margin-bottom: 20px;">
-                    <p class="beranda-section-title">⚡ Quick Input: Rencana Pekan Ini</p>
-                    <form id="quickInputForm" style="display: flex; flex-direction: column; gap: 10px;">
-                    <input type="text" id="q-nama" placeholder="Nama Pekerjaan (Contoh: Koordinasi SBR...)" required style="width: 100%; font-weight: bold; padding: 10px;">
+        <div id="tab-dashboard" class="tab-content active">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border: none; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="margin-top:0;">Progress Kinerja Anda</h3>
+                        <div id="dashProgressRingkas">Memuat data...</div>
+                    </div>
                     
-                    <div style="display: flex; gap: 10px;">
-                        <select id="q-triwulan" required style="flex: 1; padding: 8px;"><option value="">-- Memuat Wadah... --</option></select>
-                        <select id="q-kpi" required style="flex: 2; padding: 8px;"><option value="">-- Memuat KPI / Rencana Kinerja... --</option></select>
+                    <div class="card">
+                        <h3 style="margin-top:0; color: var(--danger);">🚨 Deadline Terdekat</h3>
+                        <div id="dashTodoList">Memuat tugas...</div>
                     </div>
-
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" id="q-jumlah" value="1" placeholder="Target" required style="width: 80px; padding: 8px;">
-                        <input type="text" id="q-satuan" placeholder="Satuan (Dok/Kec)" required style="width: 120px; padding: 8px;">
-                        <input type="date" id="q-deadline" required style="flex: 1; padding: 8px;">
-                        <button type="submit" class="btn-primary" style="flex: 1; padding: 10px;">+ Tambah ke To-Do List</button>
-                    </div>
-                    </form>
                 </div>
 
-                <div class="card">
-                    <p class="beranda-section-title">📅 Daftar To-Do List (Urut Deadline)</p>
-                    <div id="priority-todo-list">
-                        <div style="color:#94a3b8; font-size:13px; text-align:center; padding: 20px;">Memuat tugas Anda...</div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                    <div class="card" style="padding: 15px;">
+                        <h3 style="margin-top:0;">Papan Alur Kerja (Otomatis)</h3>
+                        <div id="dashKanban" style="display: flex; gap: 10px; overflow-x: auto;">Memuat papan...</div>
+                    </div>
+                    <div class="card" style="padding: 15px;">
+                        <h3 style="margin-top:0;">Kalender Proyek</h3>
+                        <div id="calendar" style="font-size: 12px;"></div>
                     </div>
                 </div>
             </div>
-
-            <div>
-                <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border: none;">
-                    <div id="beranda-tanggal" style="font-size: 12px; opacity: 0.8;"></div>
-                    <div id="beranda-sapaan" style="font-size: 20px; font-weight: 700;"></div>
-                    <hr style="opacity: 0.2; margin: 15px 0;">
-                    <div id="beranda-kpi-ringkas"></div>
-                </div>
-
-                <div class="card">
-                    <p class="beranda-section-title">📊 Progress Per Kategori</p>
-                    <div id="beranda-kpi-detail"></div>
-                </div>
-            </div>
-
         </div>
-    </div>
 
-        <!-- ================================================ -->
-        <!-- TAB ARSITEKTUR (tidak diubah)                     -->
-        <!-- ================================================ -->
-        <div id="tab-arsitektur" class="tab-content">
-            <div class="card">
-                <h3 style="margin-top:0;">Struktur Waktu &amp; Proyek</h3>
-                <p style="color: var(--text-muted); font-size: 14px;">Atur wadah utama (Triwulan/Semester) untuk mengelompokkan pekerjaan Anda.</p>
-                <div id="triwulanList">Loading data...</div>
-                
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
-                
-                <h4 style="color: var(--primary);">+ Tambah Wadah Baru</h4>
-                <form id="formTriwulan">
-                    <input type="text" id="namaTriwulan" placeholder="Contoh: Triwulan I" required>
-                    <div style="display: flex; gap: 15px;">
-                        <input type="number" id="tahunTriwulan" placeholder="Tahun (Contoh: 2026)" style="flex: 1;" required>
-                        <input type="number" id="periodeTriwulan" placeholder="Periode (1-4)" min="1" max="4" style="flex: 1;" required>
-                    </div>
-                    <button type="submit" class="btn-primary">Simpan Wadah</button>
+        <div id="tab-target" class="tab-content">
+            <div class="card" style="max-width: 800px; margin: 0 auto;">
+                <h2 style="color: var(--primary); text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px;">Form Rencana Target Pekerjaan</h2>
+                <form id="formInputTarget">
+                    <p style="text-align:center; color:gray;">[Area form target siap diisi]</p>
                 </form>
             </div>
         </div>
 
-        <!-- ================================================ -->
-        <!-- TAB RENCANA (tidak diubah)                        -->
-        <!-- ================================================ -->
-        <div id="tab-rencana" class="tab-content">
-            <div id="calendar" style="background: white; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);"></div>
-        </div>
-
-        <!-- ================================================ -->
-        <!-- TAB EKSEKUSI (tidak diubah)                       -->
-        <!-- ================================================ -->
-        <div id="tab-eksekusi" class="tab-content">
-            <div class="card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
-                <div class="kanban-board" id="kanbanContainer">
-                    <div class="kanban-col" data-status="Persiapan">
-                        <h4>Persiapan</h4><div class="kanban-items" id="col-Persiapan"></div>
-                    </div>
-                    <div class="kanban-col" data-status="Pelaksanaan">
-                        <h4>Pelaksanaan</h4><div class="kanban-items" id="col-Pelaksanaan"></div>
-                    </div>
-                    <div class="kanban-col" data-status="Pelaporan">
-                        <h4>Pelaporan</h4><div class="kanban-items" id="col-Pelaporan"></div>
-                    </div>
-                    <div class="kanban-col" data-status="Monitoring dan Evaluasi">
-                        <h4>Monev</h4><div class="kanban-items" id="col-MonitoringEvaluasi"></div>
-                    </div>
+        <div id="tab-realisasi" class="tab-content">
+            <div class="card">
+                <h3 style="margin-top:0;">Pilih Pekerjaan untuk Diupdate:</h3>
+                <select id="pilihRealisasi" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 20px;">
+                    <option value="">-- Memuat daftar pekerjaan aktif... --</option>
+                </select>
+                
+                <hr style="border:0; border-top: 1px solid #eee; margin-bottom: 20px;">
+                
+                <div id="areaWorkspaceRealisasi" style="display: none;">
+                    <p style="text-align:center; color:gray;">[Area workspace realisasi siap di-render]</p>
                 </div>
             </div>
         </div>
 
-        <!-- ================================================ -->
-        <!-- TAB ARSIP (tidak diubah)                          -->
-        <!-- ================================================ -->
-        <div id="tab-arsip" class="tab-content">
+        <div id="tab-laporan" class="tab-content">
             <div class="card">
-                <h3 style="margin-top:0; color: var(--success);">Arsip Pekerjaan Selesai</h3>
-                <p style="color: var(--text-muted); font-size: 14px;">Semua dokumentasi pekerjaan yang sudah tuntas tersimpan aman di sini.</p>
-                <div id="col-Selesai" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                <h3 style="margin-top:0; color: var(--success);">Generate Laporan Rencana Kinerja</h3>
+                <p style="font-size: 14px; color: var(--text-muted);">Sistem akan menghimpun semua proyek, logbook, dan bukti dukung berdasarkan Rencana Kinerja / KPI yang sama menjadi 1 landing page laporan resmi.</p>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <select id="pilihLaporanKpi" style="flex: 2; padding: 12px;">
+                        <option value="">-- Pilih Rencana Kinerja (KPI) --</option>
+                    </select>
+                    <button class="btn-primary" id="btnBuatLaporan" style="flex: 1; background: var(--success);">Buat Laporan Terpadu</button>
                 </div>
             </div>
         </div>
@@ -177,8 +111,6 @@
     <script src="js/config.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
-    <!-- File baru: harus di bawah app.js -->
-    <script src="js/dashboard-home.js"></script>
+    <script src="js/app-rombak.js"></script> 
 </body>
 </html>
