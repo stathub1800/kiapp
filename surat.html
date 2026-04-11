@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surat Keluar — Superapp KPI</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ── Overrides khusus halaman surat ── */
+        .surat-layout {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* ── Panel Kiri: Form Input ── */
+        .panel-form {
+            background: #fff;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+        }
+        .panel-form-inner { padding: 20px; }
+        .panel-form-header {
+            padding: 16px 20px;
+            background: var(--primary);
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .panel-form-header h2 { margin: 0; font-size: 15px; font-weight: 700; }
+        .panel-form-header p  { margin: 3px 0 0; font-size: 11px; opacity: .75; }
+
+        /* Tab template di form */
+        .template-tabs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+        .tmpl-btn {
+            padding: 8px 4px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            background: #f8fafc;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-align: center;
+            transition: all .2s;
+        }
+        .tmpl-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .tmpl-btn:hover:not(.active) { background: var(--border-light); }
+
+        /* Bagian form yang bisa dilipat */
+        .form-section {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .form-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            user-select: none;
+        }
+        .form-section-header:hover { background: var(--border-light); }
+        .form-section-body { padding: 14px; }
+        .form-section-body .form-group { margin-bottom: 12px; }
+        .form-section-body .form-group:last-child { margin-bottom: 0; }
+        .form-section-body label { font-size: 11px; }
+        .form-section-body input,
+        .form-section-body select,
+        .form-section-body textarea { font-size: 12px; padding: 7px 10px; margin-bottom: 0; }
+
+        /* ── Panel Kanan: Preview Surat ── */
+        .panel-preview {
+            background: #e2e8f0;
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+            padding: 24px;
+        }
+
+        /* Kertas A4 */
+        .kertas {
+            background: #fff;
+            width: 100%;
+            max-width: 794px;
+            margin: 0 auto;
+            min-height: 1123px;
+            padding: 60px 70px 80px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.12);
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            position: relative;
+        }
+
+        /* KOP SURAT */
+        .kop {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 12px;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 4px;
+        }
+        .kop-logo {
+            width: 65px; height: 65px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; color: #999; text-align: center;
+            background: #f8f8f8;
+        }
+        .kop-teks { text-align: center; }
+        .kop-teks .nama-instansi { font-size: 16pt; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .kop-teks .nama-sub      { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
+        .kop-teks .alamat        { font-size: 9pt; margin-top: 3px; }
+        .kop-garis2 { border-bottom: 1px solid #000; margin-bottom: 20px; }
+
+        /* IDENTITAS SURAT */
+        .identitas { margin-bottom: 16px; }
+        .identitas table { border-collapse: collapse; }
+        .identitas td { font-size: 12pt; padding: 1px 0; vertical-align: top; }
+        .identitas td.lbl  { width: 90px; }
+        .identitas td.sep  { width: 14px; }
+        .identitas td.val  { }
+
+        /* TUJUAN */
+        .tujuan { margin-bottom: 16px; }
+        .tujuan p { margin: 0; font-size: 12pt; }
+
+        /* ISI SURAT */
+        .isi-surat { margin-bottom: 20px; }
+        .isi-surat p { margin: 0 0 10px; text-align: justify; text-indent: 30px; }
+        .isi-surat ul { margin: 0 0 10px 20px; padding: 0; }
+        .isi-surat li { margin-bottom: 4px; }
+
+        /* TTD */
+        .ttd-block {
+            margin-top: 30px;
+        }
+        .ttd-kota-tgl { margin-bottom: 8px; }
+        .ttd-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .ttd-item { }
+        .ttd-jabatan { margin-bottom: 60px; }
+        .ttd-nama { font-weight: bold; text-decoration: underline; }
+        .ttd-nip  { font-size: 11pt; }
+
+        /* PLACEHOLDER highlight saat edit */
+        [data-ph] { cursor: text; }
+        [data-ph]:empty::before {
+            content: attr(data-ph);
+            color: #bbb;
+            font-style: italic;
+        }
+
+        /* Toolbar preview */
+        .preview-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            max-width: 794px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Daftar surat */
+        .surat-list-item {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: box-shadow .15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .surat-list-item:hover { box-shadow: var(--shadow-md); }
+        .surat-list-item.active { border-color: var(--primary); border-width: 2px; }
+        .surat-nomor { font-size: 12px; font-weight: 700; color: var(--primary); }
+        .surat-perihal { font-size: 13px; color: var(--text); margin-top: 2px; }
+        .surat-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+        @media print {
+            .topbar, .panel-form, .preview-toolbar, .tab-nav { display: none !important; }
+            .surat-layout { grid-template-columns: 1fr; }
+            .panel-preview { height: auto; background: #fff; padding: 0; }
+            .kertas { box-shadow: none; max-width: 100%; padding: 15mm 20mm; min-height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="topbar-brand">
+        <div>
+            <h1>Superapp KPI</h1>
+            <span>Modul Surat Keluar</span>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <a href="dashboard.html" class="btn btn-outline" style="border-color:rgba(255,255,255,.5); color:#fff; font-size:12px; padding:6px 14px; text-decoration:none;">← Dashboard</a>
+        <button onclick="logout()" class="btn btn-ghost" style="color:rgba(255,255,255,.7); font-size:12px;">🔒 Keluar</button>
+    </div>
+</div>
+
+<!-- TAB NAVIGASI -->
+<nav class="tab-nav">
+    <button class="tab-btn active" data-view="buat">✏️ Buat Surat</button>
+    <button class="tab-btn" data-view="arsip">📁 Arsip Surat</button>
+    <button class="tab-btn" data-view="config">⚙️ Konfigurasi</button>
+</nav>
+
+<!-- ════════════════════════════════════════════ VIEW: BUAT SURAT -->
+<div id="view-buat" class="surat-layout">
+
+    <!-- PANEL KIRI: FORM -->
+    <div class="panel-form">
+        <div class="panel-form-header">
+            <h2>✏️ Input Data Surat</h2>
+            <p>Isi form → preview langsung terbentuk di kanan</p>
+        </div>
+        <div class="panel-form-inner">
+
+            <!-- Pilih Template -->
+            <div style="margin-bottom:16px;">
+                <label style="margin-bottom:8px;">Jenis Template Surat</label>
+                <div class="template-tabs">
+                    <div class="tmpl-btn active" data-tmpl="dinas"    onclick="gantiTemplate('dinas',this)">📄<br>Dinas</div>
+                    <div class="tmpl-btn"         data-tmpl="undangan" onclick="gantiTemplate('undangan',this)">📨<br>Undangan</div>
+                    <div class="tmpl-btn"         data-tmpl="tugas"    onclick="gantiTemplate('tugas',this)">🎯<br>Tugas</div>
+                    <div class="tmpl-btn"         data-tmpl="nota"     onclick="gantiTemplate('nota',this)">📋<br>Nota Dinas</div>
+                </div>
+            </div>
+
+            <!-- SEKSI: Identitas Surat -->
+            <div class="form-section">
+                <div class="form-section-header" onclick="toggleSection(this)">
+                    <span>📋 Identitas Surat</span><span>▾</span>
+                </div>
+                <div class="form-section-body">
+                    <div class="form-group">
+                        <label>Nomor Surat *</label>
+                        <input type="text" id="f-nomor" placeholder="B-001/BPS1800/KS.111/01/2025"
+                               oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Lampiran</label>
+                        <input type="text" id="f-lampiran" placeholder="- / 1 (satu) berkas"
+                               oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Perihal *</label>
+                        <input type="text" id="f-perihal" placeholder="Undangan Rapat Koordinasi"
+                               oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Sifat</label>
+                        <select id="f-sifat" onchange="updatePreview()">
+                            <option value="Biasa">Biasa</option>
+                            <option value="Segera">Segera</option>
+                            <option value="Sangat Segera">Sangat Segera</option>
+                            <option value="Rahasia">Rahasia</option>
+                        </select>
+                    </div>
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label>Kota Surat</label>
+                            <input type="text" id="f-kota" value="Bandarlampung" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Surat</label>
+                            <input type="date" id="f-tanggal" oninput="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKSI: Tujuan -->
+            <div class="form-section">
+                <div class="form-section-header" onclick="toggleSection(this)">
+                    <span>📮 Tujuan Surat</span><span>▾</span>
+                </div>
+                <div class="form-section-body">
+                    <div class="form-group">
+                        <label>Kepada (Jabatan)</label>
+                        <input type="text" id="f-kpd-jabatan"
+                               placeholder="Kepala Dinas Komunikasi dan Informatika"
+                               oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Instansi / Unit Kerja</label>
+                        <input type="text" id="f-kpd-instansi"
+                               placeholder="Provinsi Lampung"
+                               oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Di —</label>
+                        <input type="text" id="f-kpd-kota" value="Bandarlampung" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKSI: Isi Surat -->
+            <div class="form-section">
+                <div class="form-section-header" onclick="toggleSection(this)">
+                    <span>📝 Isi Surat</span><span>▾</span>
+                </div>
+                <div class="form-section-body">
+                    <div class="form-group">
+                        <label>Kalimat Pembuka</label>
+                        <textarea id="f-awalan" rows="3"
+                            placeholder="Sehubungan dengan pelaksanaan kegiatan... kami bermaksud..."
+                            oninput="updatePreview()"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Isi / Pokok Surat</label>
+                        <textarea id="f-isi" rows="5"
+                            placeholder="Tulis isi pokok surat. Gunakan baris baru untuk poin-poin. Contoh:&#10;1. Hari/Tanggal: Selasa, 15 Juli 2025&#10;2. Pukul: 09.00 WIB s.d. selesai&#10;3. Tempat: Ruang Rapat BPS Provinsi Lampung"
+                            oninput="updatePreview()"></textarea>
+                        <div class="form-hint">Baris dimulai angka (1. 2. 3.) atau tanda (-) akan jadi poin otomatis</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Kalimat Penutup</label>
+                        <textarea id="f-penutup" rows="2"
+                            placeholder="Demikian atas perhatian dan kehadiran Saudara, kami ucapkan terima kasih."
+                            oninput="updatePreview()"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEKSI: Penandatangan -->
+            <div class="form-section">
+                <div class="form-section-header" onclick="toggleSection(this)">
+                    <span>✍️ Penandatangan</span><span>▾</span>
+                </div>
+                <div class="form-section-body">
+                    <div class="form-group">
+                        <label>Jabatan Penandatangan</label>
+                        <input type="text" id="f-ttd-jabatan" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama (akan digarisbawahi)</label>
+                        <input type="text" id="f-ttd-nama" oninput="updatePreview()">
+                    </div>
+                    <div class="form-group">
+                        <label>NIP</label>
+                        <input type="text" id="f-ttd-nip" oninput="updatePreview()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOMBOL AKSI -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:16px; padding-bottom:20px;">
+                <button class="btn btn-secondary" onclick="resetForm()" style="justify-content:center;">🗑 Reset</button>
+                <button class="btn btn-primary"   onclick="simpanSurat()" style="justify-content:center;" id="btn-simpan">💾 Simpan Draft</button>
+                <button class="btn btn-success"   onclick="cetakSurat()" style="grid-column:1/-1; justify-content:center; padding:12px;">🖨 Cetak / Export PDF</button>
+            </div>
+
+        </div><!-- /panel-form-inner -->
+    </div><!-- /panel-form -->
+
+    <!-- PANEL KANAN: PREVIEW -->
+    <div class="panel-preview">
+        <div class="preview-toolbar">
+            <span style="font-size:12px; color:#64748b; align-self:center;">Preview Surat (live update)</span>
+            <div style="flex:1;"></div>
+            <button class="btn btn-secondary btn-sm" onclick="zoomPreview(-1)">A−</button>
+            <button class="btn btn-secondary btn-sm" onclick="zoomPreview(1)">A+</button>
+            <button class="btn btn-success btn-sm"   onclick="cetakSurat()">🖨 Cetak</button>
+        </div>
+
+        <!-- KERTAS A4 PREVIEW -->
+        <div class="kertas" id="kertas-preview">
+
+            <!-- KOP SURAT -->
+            <div class="kop">
+                <div class="kop-logo">LOGO<br>BPS</div>
+                <div class="kop-teks">
+                    <div class="nama-instansi" id="prev-instansi-nama">BADAN PUSAT STATISTIK</div>
+                    <div class="nama-sub"      id="prev-instansi-sub">PROVINSI LAMPUNG</div>
+                    <div class="alamat"        id="prev-instansi-alamat">Jl. Basuki Rahmat No. 54, Bandarlampung 35213</div>
+                    <div class="alamat"        id="prev-instansi-kontak">Telp. (0721) 482909 | bps1800@bps.go.id | lampung.bps.go.id</div>
+                </div>
+            </div>
+            <div class="kop-garis2"></div>
+
+            <!-- IDENTITAS SURAT -->
+            <div class="identitas">
+                <table>
+                    <tr>
+                        <td class="lbl">Nomor</td>
+                        <td class="sep">:</td>
+                        <td class="val" id="prev-nomor">________________________</td>
+                    </tr>
+                    <tr id="row-lampiran">
+                        <td class="lbl">Lampiran</td>
+                        <td class="sep">:</td>
+                        <td class="val" id="prev-lampiran">-</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Hal</td>
+                        <td class="sep">:</td>
+                        <td class="val" id="prev-perihal" style="font-weight:bold;">________________________</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Sifat</td>
+                        <td class="sep">:</td>
+                        <td class="val" id="prev-sifat">Biasa</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- TANGGAL & TUJUAN -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0; margin-bottom:20px;">
+                <div></div>
+                <div>
+                    <div id="prev-kota-tgl" style="margin-bottom:10px;">Bandarlampung, __________</div>
+                    <div class="tujuan">
+                        <p>Kepada</p>
+                        <p>Yth. <span id="prev-kpd-jabatan">________________________</span></p>
+                        <p id="prev-kpd-instansi-wrap" style="display:none;"><span id="prev-kpd-instansi"></span></p>
+                        <p>di&nbsp;&nbsp;&nbsp;<span id="prev-kpd-kota">Bandarlampung</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SALAM PEMBUKA -->
+            <div class="isi-surat">
+                <p id="prev-salam">Dengan hormat,</p>
+
+                <!-- AWALAN -->
+                <div id="prev-awalan-wrap">
+                    <p id="prev-awalan" style="display:none;"></p>
+                </div>
+
+                <!-- ISI -->
+                <div id="prev-isi-wrap"></div>
+
+                <!-- PENUTUP -->
+                <div id="prev-penutup-wrap">
+                    <p id="prev-penutup" style="display:none;"></p>
+                </div>
+            </div>
+
+            <!-- TTD -->
+            <div class="ttd-block">
+                <div id="prev-ttd-kota-tgl" class="ttd-kota-tgl">Bandarlampung, __________</div>
+                <div class="ttd-grid">
+                    <div></div>
+                    <div class="ttd-item">
+                        <div class="ttd-jabatan" id="prev-ttd-jabatan">Kepala BPS Provinsi Lampung</div>
+                        <div style="height:60px;"></div>
+                        <div class="ttd-nama" id="prev-ttd-nama">___________________________</div>
+                        <div class="ttd-nip"  id="prev-ttd-nip">NIP. ______________________</div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /kertas -->
+    </div><!-- /panel-preview -->
+
+</div><!-- /view-buat -->
+
+<!-- ════════════════════════════════════════════ VIEW: ARSIP -->
+<div id="view-arsip" style="display:none; padding:24px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:center; margin-bottom:20px;">
+        <div>
+            <h2 style="margin:0; font-size:18px;">📁 Arsip Surat Keluar</h2>
+            <p style="margin:4px 0 0; font-size:13px; color:var(--text-muted);">Semua surat yang sudah disimpan</p>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+            <input type="text" id="arsip-cari" placeholder="🔍 Cari nomor / perihal..." style="max-width:240px;"
+                   oninput="filterArsip(this.value)">
+            <button class="btn btn-primary" onclick="showView('buat')">+ Buat Surat Baru</button>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm arsip-filter active" data-filter="semua"   onclick="filterJenis('semua',this)">Semua</button>
+        <button class="btn btn-secondary btn-sm arsip-filter"        data-filter="dinas"    onclick="filterJenis('dinas',this)">Dinas</button>
+        <button class="btn btn-secondary btn-sm arsip-filter"        data-filter="undangan" onclick="filterJenis('undangan',this)">Undangan</button>
+        <button class="btn btn-secondary btn-sm arsip-filter"        data-filter="tugas"    onclick="filterJenis('tugas',this)">Tugas</button>
+        <button class="btn btn-secondary btn-sm arsip-filter"        data-filter="nota"     onclick="filterJenis('nota',this)">Nota Dinas</button>
+    </div>
+
+    <div id="arsip-list">
+        <div class="empty-state"><div class="empty-icon">📁</div><p>Memuat arsip surat...</p></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════ VIEW: CONFIG -->
+<div id="view-config" style="display:none; padding:24px; max-width:600px;">
+    <h2 style="margin:0 0 4px; font-size:18px;">⚙️ Konfigurasi Kop Surat</h2>
+    <p style="margin:0 0 20px; font-size:13px; color:var(--text-muted);">Data ini akan muncul di kop surat secara otomatis</p>
+
+    <div class="card">
+        <div class="form-group">
+            <label>Nama Instansi (Baris 1)</label>
+            <input type="text" id="cfg-instansi-nama" placeholder="BADAN PUSAT STATISTIK" oninput="updateKopPreview()">
+        </div>
+        <div class="form-group">
+            <label>Nama Sub / Wilayah (Baris 2)</label>
+            <input type="text" id="cfg-instansi-sub" placeholder="PROVINSI LAMPUNG" oninput="updateKopPreview()">
+        </div>
+        <div class="form-group">
+            <label>Alamat</label>
+            <input type="text" id="cfg-alamat" placeholder="Jl. Basuki Rahmat No.54...">
+        </div>
+        <div class="form-group">
+            <label>Telepon & Fax</label>
+            <input type="text" id="cfg-telp" placeholder="Telp. (0721) 482909">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="text" id="cfg-email" placeholder="bps1800@bps.go.id">
+        </div>
+        <div class="form-group">
+            <label>Website</label>
+            <input type="text" id="cfg-website" placeholder="lampung.bps.go.id">
+        </div>
+        <div style="border-top:1px solid var(--border); margin:16px 0; padding-top:16px;">
+            <h3 style="margin:0 0 12px; font-size:14px;">Penandatangan Default</h3>
+            <div class="form-group">
+                <label>Jabatan</label>
+                <input type="text" id="cfg-ttd-jabatan" placeholder="Kepala BPS Provinsi Lampung">
+            </div>
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="cfg-ttd-nama" placeholder="Dr. Nama Kepala, S.ST, M.Si">
+            </div>
+            <div class="form-group">
+                <label>NIP</label>
+                <input type="text" id="cfg-ttd-nip" placeholder="NIP. 19XXXXXX XXXXXX X XXX">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="simpanConfig()" style="justify-content:center; width:100%; padding:12px;">
+            💾 Simpan Konfigurasi
+        </button>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let _cfg      = {};          // konfigurasi instansi dari DB
+let _template = 'dinas';     // template aktif
+let _zoom     = 1;           // zoom level preview
+let _editId   = null;        // ID surat yang sedang diedit
+let _allSurat = [];          // cache arsip
+let _filterJenis = 'semua';
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set tanggal default = hari ini
+    document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
+
+    // Load konfigurasi dari DB
+    await loadConfig();
+
+    // Update preview awal
+    updatePreview();
+
+    // Tab navigation
+    document.querySelectorAll('.tab-btn[data-view]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showView(this.dataset.view);
+        });
+    });
+});
+
+// ══════════════════════════════════════════════════
+// NAVIGASI VIEW
+// ══════════════════════════════════════════════════
+function showView(view) {
+    document.getElementById('view-buat').style.display   = 'none';
+    document.getElementById('view-arsip').style.display  = 'none';
+    document.getElementById('view-config').style.display = 'none';
+
+    document.querySelectorAll('.tab-btn[data-view]').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.tab-btn[data-view="${view}"]`)?.classList.add('active');
+
+    if (view === 'buat') {
+        document.getElementById('view-buat').style.display = 'grid';
+    } else if (view === 'arsip') {
+        document.getElementById('view-arsip').style.display = 'block';
+        loadArsip();
+    } else if (view === 'config') {
+        document.getElementById('view-config').style.display = 'block';
+        isiFormConfig();
+    }
+}
+
+// ══════════════════════════════════════════════════
+// TOGGLE SECTION
+// ══════════════════════════════════════════════════
+function toggleSection(header) {
+    const body  = header.nextElementSibling;
+    const arrow = header.querySelector('span:last-child');
+    const open  = body.style.display !== 'none';
+    body.style.display  = open ? 'none' : 'block';
+    arrow.textContent   = open ? '▸' : '▾';
+}
+
+// ══════════════════════════════════════════════════
+// GANTI TEMPLATE
+// ══════════════════════════════════════════════════
+function gantiTemplate(tmpl, el) {
+    _template = tmpl;
+    document.querySelectorAll('.tmpl-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    // Isi awalan default sesuai template
+    const awalMap = {
+        dinas:    'Sehubungan dengan pelaksanaan kegiatan ... pada Badan Pusat Statistik Provinsi Lampung, dengan hormat kami menyampaikan hal-hal sebagai berikut.',
+        undangan: 'Sehubungan dengan akan diadakannya kegiatan ..., kami mengundang Saudara untuk hadir pada:',
+        tugas:    'Dalam rangka pelaksanaan tugas dan fungsi BPS Provinsi Lampung, bersama ini kami menugaskan pegawai/tim berikut:',
+        nota:     'Sehubungan dengan ... bersama ini kami sampaikan hal-hal sebagai berikut:'
+    };
+    const penutupMap = {
+        dinas:    'Demikian kami sampaikan, atas perhatian dan kerja sama Saudara kami ucapkan terima kasih.',
+        undangan: 'Demikian undangan ini kami sampaikan, mengingat pentingnya acara tersebut kami mengharapkan kehadiran Saudara tepat pada waktunya. Atas perhatian dan kehadiran Saudara, kami ucapkan terima kasih.',
+        tugas:    'Demikian Surat Tugas ini dibuat untuk dapat dipergunakan sebagaimana mestinya.',
+        nota:     'Demikian nota dinas ini kami sampaikan untuk dapat dipertimbangkan lebih lanjut.'
+    };
+
+    const f = (id) => document.getElementById(id);
+    if (!f('f-awalan').value) f('f-awalan').value = awalMap[tmpl] || '';
+    if (!f('f-penutup').value) f('f-penutup').value = penutupMap[tmpl] || '';
+
+    updatePreview();
+}
+
+// ══════════════════════════════════════════════════
+// UPDATE PREVIEW (LIVE)
+// ══════════════════════════════════════════════════
+function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+}
+
+function updatePreview() {
+    const nomor    = val('f-nomor');
+    const lampiran = val('f-lampiran');
+    const perihal  = val('f-perihal');
+    const sifat    = val('f-sifat');
+    const kota     = val('f-kota') || 'Bandarlampung';
+    const tanggal  = val('f-tanggal');
+    const kpdJbt   = val('f-kpd-jabatan');
+    const kpdInst  = val('f-kpd-instansi');
+    const kpdKota  = val('f-kpd-kota') || 'Bandarlampung';
+    const awalan   = val('f-awalan');
+    const isi      = val('f-isi');
+    const penutup  = val('f-penutup');
+    const ttdJbt   = val('f-ttd-jabatan');
+    const ttdNama  = val('f-ttd-nama');
+    const ttdNip   = val('f-ttd-nip');
+
+    // Format tanggal Indonesia
+    const tglFmt = tanggal
+        ? new Date(tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })
+        : '__________';
+
+    // Set nilai preview
+    setText('prev-nomor',   nomor   || '________________________');
+    setText('prev-perihal', perihal || '________________________');
+    setText('prev-sifat',   sifat   || 'Biasa');
+    setText('prev-kota-tgl',    `${kota}, ${tglFmt}`);
+    setText('prev-ttd-kota-tgl',`${kota}, ${tglFmt}`);
+    setText('prev-kpd-jabatan', kpdJbt  || '________________________');
+    setText('prev-kpd-kota',    kpdKota);
+    setText('prev-ttd-jabatan', ttdJbt  || _cfg['ttd_jabatan'] || 'Kepala BPS Provinsi Lampung');
+    setText('prev-ttd-nama',    ttdNama || _cfg['ttd_nama']    || '___________________________');
+    setText('prev-ttd-nip',     ttdNip  || _cfg['ttd_nip']    || 'NIP. ______________________');
+
+    // Lampiran (sembunyikan kalau kosong)
+    const rowLamp = document.getElementById('row-lampiran');
+    if (lampiran) {
+        setText('prev-lampiran', lampiran);
+        if (rowLamp) rowLamp.style.display = '';
+    } else {
+        setText('prev-lampiran', '-');
+    }
+
+    // Instansi tujuan
+    const instWrap = document.getElementById('prev-kpd-instansi-wrap');
+    if (kpdInst) {
+        setText('prev-kpd-instansi', kpdInst);
+        if (instWrap) instWrap.style.display = '';
+    } else {
+        if (instWrap) instWrap.style.display = 'none';
+    }
+
+    // Awalan
+    const awalEl = document.getElementById('prev-awalan');
+    if (awalEl) {
+        awalEl.textContent = awalan;
+        awalEl.style.display = awalan ? '' : 'none';
+    }
+
+    // Isi surat — deteksi poin-poin otomatis
+    const isiWrap = document.getElementById('prev-isi-wrap');
+    if (isiWrap && isi) {
+        isiWrap.innerHTML = renderIsiSurat(isi);
+    } else if (isiWrap) {
+        isiWrap.innerHTML = '';
+    }
+
+    // Penutup
+    const penutupEl = document.getElementById('prev-penutup');
+    if (penutupEl) {
+        penutupEl.textContent = penutup;
+        penutupEl.style.display = penutup ? '' : 'none';
+    }
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+// Render isi surat: paragraf biasa atau poin-poin
+function renderIsiSurat(teks) {
+    const baris = teks.split('\n').filter(b => b.trim());
+    const isPoin = (b) => /^(\d+[\.\)]\s|[-•]\s)/.test(b.trim());
+
+    let html   = '';
+    let inList = false;
+
+    baris.forEach(b => {
+        const trimmed = b.trim();
+        if (isPoin(trimmed)) {
+            if (!inList) { html += '<ol style="margin:6px 0 6px 20px; padding:0;">'; inList = true; }
+            const teks = trimmed.replace(/^(\d+[\.\)]\s|[-•]\s)/, '');
+            html += `<li style="margin-bottom:4px;">${escHtml(teks)}</li>`;
+        } else {
+            if (inList) { html += '</ol>'; inList = false; }
+            if (trimmed) html += `<p style="margin:0 0 8px; text-align:justify; text-indent:30px;">${escHtml(trimmed)}</p>`;
+        }
+    });
+    if (inList) html += '</ol>';
+    return html;
+}
+
+function escHtml(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════
+// ZOOM PREVIEW
+// ══════════════════════════════════════════════════
+function zoomPreview(dir) {
+    _zoom = Math.max(0.5, Math.min(1.2, _zoom + dir * 0.1));
+    document.getElementById('kertas-preview').style.transform = `scale(${_zoom})`;
+    document.getElementById('kertas-preview').style.transformOrigin = 'top center';
+}
+
+// ══════════════════════════════════════════════════
+// SIMPAN SURAT
+// ══════════════════════════════════════════════════
+async function simpanSurat() {
+    const nomor   = val('f-nomor');
+    const perihal = val('f-perihal');
+
+    if (!nomor)   { showToast('Isi nomor surat terlebih dahulu', 'warning'); return; }
+    if (!perihal) { showToast('Isi perihal surat terlebih dahulu', 'warning'); return; }
+
+    const btn = document.getElementById('btn-simpan');
+    btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+
+    const payload = {
+        nomor_surat:     nomor,
+        perihal:         perihal,
+        sifat:           val('f-sifat'),
+        lampiran:        val('f-lampiran') || null,
+        tanggal_surat:   val('f-tanggal'),
+        kota_surat:      val('f-kota') || 'Bandarlampung',
+        kepada_jabatan:  val('f-kpd-jabatan') || null,
+        kepada_instansi: val('f-kpd-instansi') || null,
+        kepada_kota:     val('f-kpd-kota') || 'Bandarlampung',
+        awalan:          val('f-awalan') || null,
+        isi:             val('f-isi') || null,
+        penutup:         val('f-penutup') || null,
+        ttd_jabatan:     val('f-ttd-jabatan') || _cfg['ttd_jabatan'] || null,
+        ttd_nama:        val('f-ttd-nama') || _cfg['ttd_nama'] || null,
+        ttd_nip:         val('f-ttd-nip') || _cfg['ttd_nip'] || null,
+        jenis_template:  _template,
+        status:          'Draft',
+        updated_at:      new Date().toISOString()
+    };
+
+    let error;
+    if (_editId) {
+        ({ error } = await supabase.from('surat_keluar').update(payload).eq('id', _editId));
+    } else {
+        ({ error } = await supabase.from('surat_keluar').insert([payload]));
+    }
+
+    if (error) {
+        showToast('Gagal menyimpan: ' + error.message, 'error');
+    } else {
+        showToast(_editId ? 'Surat diperbarui!' : 'Surat tersimpan sebagai Draft!', 'success');
+        _editId = null;
+        btn.textContent = '💾 Simpan Draft';
+    }
+
+    btn.disabled = false;
+}
+
+// ══════════════════════════════════════════════════
+// CETAK SURAT
+// ══════════════════════════════════════════════════
+function cetakSurat() {
+    // Reset zoom sebelum print
+    const kertas = document.getElementById('kertas-preview');
+    kertas.style.transform = 'none';
+    window.print();
+    // Restore zoom
+    setTimeout(() => {
+        kertas.style.transform = `scale(${_zoom})`;
+        kertas.style.transformOrigin = 'top center';
+    }, 500);
+}
+
+// ══════════════════════════════════════════════════
+// RESET FORM
+// ══════════════════════════════════════════════════
+function resetForm() {
+    ['f-nomor','f-lampiran','f-perihal','f-kpd-jabatan','f-kpd-instansi',
+     'f-awalan','f-isi','f-penutup','f-ttd-jabatan','f-ttd-nama','f-ttd-nip']
+        .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('f-sifat').value   = 'Biasa';
+    document.getElementById('f-kota').value    = 'Bandarlampung';
+    document.getElementById('f-kpd-kota').value= 'Bandarlampung';
+    document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
+    _editId = null;
+    document.getElementById('btn-simpan').textContent = '💾 Simpan Draft';
+    updatePreview();
+    showToast('Form dikosongkan', 'default');
+}
+
+// ══════════════════════════════════════════════════
+// LOAD & TAMPILKAN ARSIP
+// ══════════════════════════════════════════════════
+async function loadArsip() {
+    const container = document.getElementById('arsip-list');
+    container.innerHTML = '<div class="skeleton" style="height:60px;border-radius:8px;margin-bottom:8px;"></div>'.repeat(3);
+
+    const { data, error } = await supabase
+        .from('surat_keluar')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) { showToast('Gagal muat arsip: ' + error.message, 'error'); return; }
+    _allSurat = data || [];
+    renderArsip(_allSurat);
+}
+
+function renderArsip(list) {
+    const container = document.getElementById('arsip-list');
+    if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📁</div><p>Belum ada surat tersimpan.</p></div>`;
+        return;
+    }
+
+    const tmplLabel = { dinas:'Dinas', undangan:'Undangan', tugas:'Tugas', nota:'Nota Dinas' };
+    const tmplColor = { dinas:'#1d4ed8', undangan:'#059669', tugas:'#d97706', nota:'#7c3aed' };
+
+    container.innerHTML = list.map(s => {
+        const tgl   = s.tanggal_surat
+            ? new Date(s.tanggal_surat).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })
+            : '-';
+        const jenis = tmplLabel[s.jenis_template] || s.jenis_template;
+        const warna = tmplColor[s.jenis_template] || '#64748b';
+        return `
+        <div class="surat-list-item" onclick="bukaArsip('${s.id}')">
+            <div style="width:4px; height:56px; background:${warna}; border-radius:2px; flex-shrink:0;"></div>
+            <div style="flex:1; min-width:0;">
+                <div class="surat-nomor">${s.nomor_surat}</div>
+                <div class="surat-perihal">${s.perihal}</div>
+                <div class="surat-meta">${tgl} · <span style="color:${warna}; font-weight:600;">${jenis}</span> · ${s.status}</div>
+            </div>
+            <div style="display:flex; gap:6px; flex-shrink:0;">
+                <button class="btn btn-primary btn-xs"   onclick="event.stopPropagation(); editSurat('${s.id}')">Edit</button>
+                <button class="btn btn-danger btn-xs"    onclick="event.stopPropagation(); hapusSurat('${s.id}')">×</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterArsip(q) {
+    const lower = q.toLowerCase();
+    const filtered = _allSurat.filter(s =>
+        s.nomor_surat?.toLowerCase().includes(lower) ||
+        s.perihal?.toLowerCase().includes(lower)
+    );
+    renderArsip(filtered);
+}
+
+function filterJenis(jenis, el) {
+    _filterJenis = jenis;
+    document.querySelectorAll('.arsip-filter').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    const filtered = jenis === 'semua' ? _allSurat : _allSurat.filter(s => s.jenis_template === jenis);
+    renderArsip(filtered);
+}
+
+async function bukaArsip(id) {
+    const s = _allSurat.find(x => x.id === id);
+    if (!s) return;
+    // Tampilkan di view buat sebagai preview saja (read-only)
+    editSurat(id);
+}
+
+async function editSurat(id) {
+    const s = _allSurat.find(x => x.id === id);
+    if (!s) return;
+
+    _editId = id;
+    showView('buat');
+
+    // Isi form dengan data surat
+    const f = (fid, v) => { const el = document.getElementById(fid); if(el && v) el.value = v; };
+    f('f-nomor',       s.nomor_surat);
+    f('f-lampiran',    s.lampiran);
+    f('f-perihal',     s.perihal);
+    f('f-sifat',       s.sifat);
+    f('f-kota',        s.kota_surat);
+    f('f-tanggal',     s.tanggal_surat);
+    f('f-kpd-jabatan', s.kepada_jabatan);
+    f('f-kpd-instansi',s.kepada_instansi);
+    f('f-kpd-kota',    s.kepada_kota);
+    f('f-awalan',      s.awalan);
+    f('f-isi',         s.isi);
+    f('f-penutup',     s.penutup);
+    f('f-ttd-jabatan', s.ttd_jabatan);
+    f('f-ttd-nama',    s.ttd_nama);
+    f('f-ttd-nip',     s.ttd_nip);
+
+    // Set template
+    const tmplEl = document.querySelector(`.tmpl-btn[data-tmpl="${s.jenis_template}"]`);
+    if (tmplEl) gantiTemplate(s.jenis_template, tmplEl);
+
+    document.getElementById('btn-simpan').textContent = '💾 Update Surat';
+    updatePreview();
+    showToast('Surat dimuat untuk diedit', 'default');
+}
+
+async function hapusSurat(id) {
+    const ok = await confirmDialog('Hapus surat ini dari arsip?');
+    if (!ok) return;
+    const { error } = await supabase.from('surat_keluar').delete().eq('id', id);
+    if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+    showToast('Surat dihapus', 'success');
+    _allSurat = _allSurat.filter(s => s.id !== id);
+    renderArsip(_allSurat);
+}
+
+// ══════════════════════════════════════════════════
+// KONFIGURASI
+// ══════════════════════════════════════════════════
+async function loadConfig() {
+    const { data } = await supabase.from('surat_config').select('kunci, nilai');
+    if (!data) return;
+
+    data.forEach(row => { _cfg[row.kunci] = row.nilai; });
+
+    // Update kop surat di preview
+    setText('prev-instansi-nama',  _cfg['instansi_nama']   || 'BADAN PUSAT STATISTIK');
+    setText('prev-instansi-sub',   _cfg['instansi_sub']    || 'PROVINSI LAMPUNG');
+    setText('prev-instansi-alamat',_cfg['instansi_alamat'] || '');
+    setText('prev-instansi-kontak',
+        [_cfg['instansi_telp'], _cfg['instansi_email'], _cfg['instansi_website']]
+            .filter(Boolean).join(' | ')
+    );
+
+    // Update TTD default di form jika kosong
+    const f = (id, key) => {
+        const el = document.getElementById(id);
+        if (el && !el.value && _cfg[key]) el.value = _cfg[key];
+    };
+    f('f-ttd-jabatan', 'ttd_jabatan');
+    f('f-ttd-nama',    'ttd_nama');
+    f('f-ttd-nip',     'ttd_nip');
+    f('f-kota',        'kota_surat');
+    f('f-kpd-kota',    'kota_surat');
+}
+
+function isiFormConfig() {
+    const f = (id, key) => {
+        const el = document.getElementById(id);
+        if (el) el.value = _cfg[key] || '';
+    };
+    f('cfg-instansi-nama', 'instansi_nama');
+    f('cfg-instansi-sub',  'instansi_sub');
+    f('cfg-alamat',        'instansi_alamat');
+    f('cfg-telp',          'instansi_telp');
+    f('cfg-email',         'instansi_email');
+    f('cfg-website',       'instansi_website');
+    f('cfg-ttd-jabatan',   'ttd_jabatan');
+    f('cfg-ttd-nama',      'ttd_nama');
+    f('cfg-ttd-nip',       'ttd_nip');
+}
+
+async function simpanConfig() {
+    const map = {
+        instansi_nama:    document.getElementById('cfg-instansi-nama')?.value,
+        instansi_sub:     document.getElementById('cfg-instansi-sub')?.value,
+        instansi_alamat:  document.getElementById('cfg-alamat')?.value,
+        instansi_telp:    document.getElementById('cfg-telp')?.value,
+        instansi_email:   document.getElementById('cfg-email')?.value,
+        instansi_website: document.getElementById('cfg-website')?.value,
+        ttd_jabatan:      document.getElementById('cfg-ttd-jabatan')?.value,
+        ttd_nama:         document.getElementById('cfg-ttd-nama')?.value,
+        ttd_nip:          document.getElementById('cfg-ttd-nip')?.value,
+    };
+
+    const rows = Object.entries(map).map(([k, v]) => ({ kunci: k, nilai: v, updated_at: new Date().toISOString() }));
+    const { error } = await supabase.from('surat_config').upsert(rows, { onConflict: 'kunci' });
+
+    if (error) { showToast('Gagal simpan: ' + error.message, 'error'); return; }
+
+    // Update cache lokal
+    Object.assign(_cfg, map);
+    showToast('Konfigurasi tersimpan!', 'success');
+
+    // Update kop preview
+    setText('prev-instansi-nama',  map.instansi_nama);
+    setText('prev-instansi-sub',   map.instansi_sub);
+    setText('prev-instansi-alamat',map.instansi_alamat);
+    setText('prev-instansi-kontak',[map.instansi_telp, map.instansi_email, map.instansi_website].filter(Boolean).join(' | '));
+}
+
+function updateKopPreview() {
+    setText('prev-instansi-nama', document.getElementById('cfg-instansi-nama')?.value);
+    setText('prev-instansi-sub',  document.getElementById('cfg-instansi-sub')?.value);
+}
+</script>
+</body>
+</html>
