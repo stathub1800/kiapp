@@ -120,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('log-teks').value = '';
                 showToast('Progres dicatat!', 'success');
                 await loadLogbook(_currentKegiatanId);
+                // Auto-advance: Persiapan → Pelaksanaan saat logbook pertama dicatat
+                await autoAdvanceStatus(_currentKegiatanId);
             }
 
             btn.disabled = false; btn.textContent = '+ Catat Progres';
@@ -167,4 +169,40 @@ async function hapusLogbook(id) {
 // ── ESCAPE HTML ──
 function escHtml(str) {
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── AUTO-ADVANCE STATUS ──
+// Dipanggil setiap kali logbook baru dicatat.
+// Aturan: jika status masih "Persiapan" dan ini logbook pertama,
+// otomatis naik ke "Pelaksanaan" tanpa perlu user klik manual.
+async function autoAdvanceStatus(id) {
+    // Cek status kegiatan saat ini
+    const { data: keg } = await supabase
+        .from('kegiatan')
+        .select('status')
+        .eq('id', id)
+        .single();
+
+    if (!keg || keg.status !== 'Persiapan') return; // hanya advance dari Persiapan
+
+    // Hitung jumlah logbook yang sudah ada
+    const { count } = await supabase
+        .from('progres_harian')
+        .select('*', { count: 'exact', head: true })
+        .eq('kegiatan_id', id);
+
+    // Jika ini logbook pertama (count = 1 setelah insert barusan)
+    if (count >= 1) {
+        const { error } = await supabase
+            .from('kegiatan')
+            .update({ status: 'Pelaksanaan' })
+            .eq('id', id);
+
+        if (!error) {
+            // Update dropdown status di UI tanpa reload halaman
+            const statusDdl = document.getElementById('ws-status');
+            if (statusDdl) statusDdl.value = 'Pelaksanaan';
+            showToast('Status otomatis diubah ke Pelaksanaan ✓', 'success');
+        }
+    }
 }
