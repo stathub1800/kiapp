@@ -32,25 +32,31 @@
         .badge-lain    { background: #dbeafe; color: #1d4ed8; }
         .iframe-container { margin-bottom: 28px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
         .iframe-label { background: #f8fafc; padding: 10px 14px; font-weight: 700; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
-        .print-btn { background: #1e293b; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,.2); font-family: 'Plus Jakarta Sans', sans-serif; }
         .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
         .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
         .summary-card .num { font-size: 24px; font-weight: 700; color: #1e3a8a; }
         .summary-card .lbl { font-size: 11px; color: #64748b; margin-top: 3px; }
+        .print-btn { background: #1e293b; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,.2); font-family: 'Plus Jakarta Sans', sans-serif; }
+        #debug-box { display:none; background:#1e293b; color:#94a3b8; font-family:monospace; font-size:11px; padding:14px 18px; border-radius:8px; max-width:820px; margin:0 auto 16px; white-space:pre-wrap; word-break:break-all; }
+        #debug-box.show { display:block; }
         @media print {
             body { background: #fff; padding: 0; }
             .kertas-a4 { box-shadow: none; padding: 20mm; max-width: 100%; border-radius: 0; }
-            .print-btn { display: none; }
+            .print-btn, #debug-box { display: none !important; }
             .iframe-container { page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 
-<button class="print-btn no-print" onclick="window.print()">🖨 Cetak / PDF</button>
+<button class="print-btn" onclick="window.print()">🖨 Cetak / PDF</button>
 
-<div id="loading" style="text-align:center; padding:60px 20px;">
-    <div style="font-size:16px; color:#64748b;">Memuat dokumen resmi...</div>
+<div id="debug-box"></div>
+
+<div id="loading" style="text-align:center; padding:80px 20px;">
+    <div style="font-size:32px; margin-bottom:14px;">⏳</div>
+    <div style="font-size:15px; color:#475569; font-weight:600;">Memuat dokumen resmi...</div>
+    <div id="loading-step" style="font-size:12px; color:#94a3b8; margin-top:8px;"></div>
 </div>
 
 <div class="kertas-a4" id="view-content" style="display:none;"></div>
@@ -58,191 +64,255 @@
 <script src="js/config.js"></script>
 <script src="js/supabase.js"></script>
 <script>
-    const _params    = new URLSearchParams(window.location.search);
-    const _tokenKeg  = _params.get('token');    // mode per-kegiatan
-    const _tokenLap  = _params.get('laporan');  // mode laporan terpadu
+const _params   = new URLSearchParams(window.location.search);
+const _tokenKeg = _params.get('token');
+const _tokenLap = _params.get('laporan');
 
-    function getEmbedUrl(url) {
-        if (!url) return url;
-        if (url.includes('drive.google.com/file/d/')) return url.replace(/\/view.*$/, '/preview');
-        if (url.includes('docs.google.com')) return url.replace(/\/edit.*$/, '/preview');
-        return url;
-    }
+function dbg(msg) {
+    const b = document.getElementById('debug-box');
+    b.classList.add('show');
+    b.textContent += msg + '\n';
+    console.log('[view]', msg);
+}
+function step(msg) {
+    const el = document.getElementById('loading-step');
+    if (el) el.textContent = msg;
+}
+function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtTgl(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+}
+function fmtTglPanjang(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function getEmbedUrl(url) {
+    if (!url) return url;
+    if (url.includes('drive.google.com/file/d/')) return url.replace(/\/view.*$/, '/preview');
+    if (url.includes('docs.google.com')) return url.replace(/\/edit.*$/, '/preview');
+    return url;
+}
 
-    function formatTgl(d) {
-        if (!d) return '-';
-        return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
+function renderLogbook(logbook) {
+    if (!logbook || !logbook.length)
+        return '<p style="font-size:13px;font-style:italic;color:#94a3b8;padding:8px 0;">Belum ada catatan pelaksanaan harian.</p>';
+    return `<div class="timeline">${logbook.map(l => `
+        <div class="timeline-item">
+            <div class="tl-date">${fmtTglPanjang(l.tanggal)}</div>
+            <div class="tl-desc">${esc(l.deskripsi||'')}</div>
+        </div>`).join('')}</div>`;
+}
 
-    function formatTglPanjang(d) {
-        if (!d) return '-';
-        return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
-    function renderBuktiBlock(buktis) {
-        if (!buktis || !buktis.length) return '<p style="font-size:13px; font-style:italic; color:#94a3b8;">Tidak ada lampiran dokumen.</p>';
-        return buktis.map((file, i) => {
-            const embedUrl = getEmbedUrl(file.file_url);
-            let embedHtml;
-            if (embedUrl && embedUrl.includes('/preview')) {
-                embedHtml = `<iframe src="${embedUrl}" width="100%" height="600px" style="border:none; display:block;"></iframe>`;
-            } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_url)) {
-                embedHtml = `<img src="${file.file_url}" style="width:100%; display:block;">`;
-            } else {
-                embedHtml = `<div style="padding:28px; text-align:center;"><a href="${file.file_url}" target="_blank" style="color:#2563eb; font-weight:700; font-size:14px;">Buka Lampiran Eksternal ↗</a></div>`;
-            }
-            return `<div class="iframe-container">
-                <div class="iframe-label">Lampiran ${i+1}: ${file.penjelasan || file.file_name}</div>
-                ${embedHtml}
+function renderBukti(buktis) {
+    if (!buktis || !buktis.length)
+        return '<p style="font-size:13px;font-style:italic;color:#94a3b8;padding:8px 0;">Tidak ada lampiran dokumen.</p>';
+    return buktis.map((file, i) => {
+        const eu = getEmbedUrl(file.file_url);
+        let embed;
+        if (eu && eu.includes('/preview')) {
+            embed = `<iframe src="${eu}" width="100%" height="600px" style="border:none;display:block;" allowfullscreen></iframe>`;
+        } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_url)) {
+            embed = `<img src="${file.file_url}" style="width:100%;display:block;">`;
+        } else {
+            embed = `<div style="padding:28px;text-align:center;background:#f8fafc;">
+                <a href="${file.file_url}" target="_blank" style="color:#2563eb;font-weight:700;font-size:14px;text-decoration:none;">↗ Buka Dokumen Lampiran</a>
             </div>`;
-        }).join('');
-    }
-
-    function renderLogbookBlock(logbook) {
-        if (!logbook || !logbook.length) return '<p style="font-size:13px; font-style:italic; color:#94a3b8;">Belum ada catatan pelaksanaan.</p>';
-        return `<div class="timeline">
-            ${logbook.map(l => `
-            <div class="timeline-item">
-                <div class="tl-date">${formatTglPanjang(l.tanggal)}</div>
-                <div class="tl-desc">${(l.deskripsi || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-            </div>`).join('')}
-        </div>`;
-    }
-
-    // ── MODE 1: LAPORAN TERPADU ──
-    async function loadLaporanTerpadu(token) {
-        const { data: lap } = await supabase.from('laporan_kpi').select('*, triwulan(nama, tahun, periode)').eq('share_token', token).single();
-        if (!lap) { showError('Laporan tidak ditemukan atau link sudah tidak aktif.'); return; }
-
-        const { data: kegiatan } = await supabase
-            .from('kegiatan')
-            .select('*, triwulan(nama)')
-            .eq('rencana_kerja_kipapp', lap.nama_kpi)
-            .eq('triwulan_id', lap.triwulan_id)
-            .neq('status', 'Batal')
-            .order('waktu_selesai', { ascending: true });
-
-        const kegIds = (kegiatan || []).map(k => k.id);
-        let logbooks = [], buktis = [];
-
-        if (kegIds.length) {
-            const [{ data: lb }, { data: bk }] = await Promise.all([
-                supabase.from('progres_harian').select('*').in('kegiatan_id', kegIds).order('tanggal', { ascending: true }),
-                supabase.from('bukti_dukung').select('*').in('kegiatan_id', kegIds).order('created_at', { ascending: true })
-            ]);
-            logbooks = lb || []; buktis = bk || [];
         }
+        return `<div class="iframe-container">
+            <div class="iframe-label">📎 Lampiran ${i+1}: ${esc(file.penjelasan || file.file_name || 'Dokumen')}</div>
+            ${embed}
+        </div>`;
+    }).join('');
+}
 
-        const grouped = (kegiatan || []).map(k => ({
-            ...k,
-            logbook: logbooks.filter(l => l.kegiatan_id === k.id),
-            bukti:   buktis.filter(b => b.kegiatan_id === k.id)
-        }));
+function showResult(html) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('debug-box').classList.remove('show');
+    const el = document.getElementById('view-content');
+    el.innerHTML = html;
+    el.style.display = 'block';
+}
 
-        const total   = grouped.length;
-        const selesai = grouped.filter(k => k.status === 'Selesai').length;
-        const persen  = total > 0 ? Math.round((selesai / total) * 100) : 0;
-        const twNama  = lap.triwulan ? `${lap.triwulan.nama} ${lap.triwulan.tahun}` : '-';
+function showError(msg) {
+    document.getElementById('loading').innerHTML = `
+        <div style="max-width:520px;margin:60px auto;text-align:center;">
+            <div style="font-size:40px;margin-bottom:16px;">⚠️</div>
+            <div style="font-size:15px;color:#334155;font-weight:600;margin-bottom:10px;">${msg}</div>
+            <div style="font-size:12px;color:#64748b;background:#f8fafc;padding:14px;border-radius:8px;text-align:left;line-height:1.8;">
+                <strong>Kemungkinan penyebab:</strong><br>
+                1. Jalankan <strong>FIX_RLS.sql</strong> di Supabase SQL Editor<br>
+                2. Pastikan data kegiatan sudah diinput di Tab Realisasi<br>
+                3. Coba generate ulang laporan dari Tab Report<br>
+                4. Lihat detail error di kotak hitam di atas
+            </div>
+        </div>`;
+}
 
-        let html = `
-        <div class="kop-surat">
-            <h1>LAPORAN CAPAIAN RENCANA KINERJA</h1>
-            <h2>${NAMA_INSTANSI}</h2>
-            <p>${twNama}</p>
-        </div>
+const INSTANSI = (typeof NAMA_INSTANSI !== 'undefined') ? NAMA_INSTANSI : 'BPS PROVINSI LAMPUNG';
 
-        <table class="meta-tabel">
-            <tr><td class="lbl">Rencana Kinerja (KPI)</td><td>: ${lap.nama_kpi}</td></tr>
-            <tr><td class="lbl">Periode</td><td>: ${twNama}</td></tr>
-            <tr><td class="lbl">Total Kegiatan</td><td>: ${total} kegiatan</td></tr>
-            <tr><td class="lbl">Kegiatan Selesai</td><td>: ${selesai} dari ${total}</td></tr>
-            <tr><td class="lbl">Persentase Capaian</td><td>: ${persen}%</td></tr>
-        </table>
+// ════════════════════════════════
+// MODE 1: ?laporan=TOKEN
+// ════════════════════════════════
+async function loadLaporanTerpadu(token) {
+    step('Mengambil data laporan...');
 
-        <div class="summary-grid">
-            <div class="summary-card"><div class="num">${total}</div><div class="lbl">Total Kegiatan</div></div>
-            <div class="summary-card"><div class="num" style="color:#10b981;">${selesai}</div><div class="lbl">Selesai</div></div>
-            <div class="summary-card"><div class="num" style="color:#3b82f6;">${total - selesai}</div><div class="lbl">Berjalan</div></div>
-            <div class="summary-card"><div class="num">${persen}%</div><div class="lbl">Capaian</div></div>
-        </div>
+    // 1. Ambil record laporan_kpi
+    const { data: lap, error: e1 } = await supabase
+        .from('laporan_kpi')
+        .select('*')
+        .eq('share_token', token)
+        .single();
 
-        <div class="section-title">URAIAN PELAKSANAAN KEGIATAN</div>`;
+    if (e1 || !lap) {
+        dbg('STEP 1 FAIL — laporan_kpi: ' + (e1?.message || 'null'));
+        dbg('Token: ' + token);
+        showError('Laporan tidak ditemukan atau link sudah tidak aktif.');
+        return;
+    }
+    dbg('STEP 1 OK — KPI: ' + lap.nama_kpi + ' | triwulan_id: ' + (lap.triwulan_id||'null'));
 
+    // 2. Ambil nama triwulan
+    step('Mengambil periode...');
+    let twNama = '-';
+    if (lap.triwulan_id) {
+        const { data: tw } = await supabase.from('triwulan').select('nama,tahun').eq('id', lap.triwulan_id).single();
+        if (tw) twNama = tw.nama + ' ' + tw.tahun;
+    }
+    dbg('STEP 2 OK — Triwulan: ' + twNama);
+
+    // 3. Ambil kegiatan
+    step('Mengambil daftar kegiatan...');
+    let q = supabase.from('kegiatan').select('*').eq('rencana_kerja_kipapp', lap.nama_kpi).neq('status','Batal').order('waktu_selesai');
+    if (lap.triwulan_id) q = q.eq('triwulan_id', lap.triwulan_id);
+
+    const { data: kegiatan, error: e3 } = await q;
+    if (e3) {
+        dbg('STEP 3 FAIL — kegiatan: ' + e3.message);
+        dbg('HINT: Jalankan FIX_RLS.sql di Supabase');
+        showError('Gagal memuat daftar kegiatan.<br><small>' + e3.message + '</small>');
+        return;
+    }
+    dbg('STEP 3 OK — ' + (kegiatan?.length||0) + ' kegiatan');
+
+    // 4. Ambil logbook & bukti
+    step('Mengambil logbook dan lampiran...');
+    const ids = (kegiatan||[]).map(k => k.id);
+    let logbooks = [], buktis = [];
+    if (ids.length) {
+        const [r1, r2] = await Promise.all([
+            supabase.from('progres_harian').select('*').in('kegiatan_id', ids).order('tanggal'),
+            supabase.from('bukti_dukung').select('*').in('kegiatan_id', ids).order('created_at')
+        ]);
+        if (r1.error) dbg('WARN logbook: ' + r1.error.message);
+        if (r2.error) dbg('WARN bukti: '   + r2.error.message);
+        logbooks = r1.data || [];
+        buktis   = r2.data || [];
+    }
+    dbg('STEP 4 OK — logbook:' + logbooks.length + ' bukti:' + buktis.length);
+
+    const grouped = (kegiatan||[]).map(k => ({
+        ...k,
+        logbook: logbooks.filter(l => l.kegiatan_id === k.id),
+        bukti:   buktis.filter(b => b.kegiatan_id === k.id)
+    }));
+
+    const total   = grouped.length;
+    const selesai = grouped.filter(k => k.status === 'Selesai').length;
+    const persen  = total > 0 ? Math.round((selesai / total) * 100) : 0;
+
+    let html = `
+    <div class="kop-surat">
+        <h1>LAPORAN CAPAIAN RENCANA KINERJA</h1>
+        <h2>${INSTANSI}</h2>
+        <p>${twNama}</p>
+    </div>
+    <table class="meta-tabel">
+        <tr><td class="lbl">Rencana Kinerja</td><td>: ${esc(lap.nama_kpi)}</td></tr>
+        <tr><td class="lbl">Periode</td><td>: ${twNama}</td></tr>
+        <tr><td class="lbl">Total Kegiatan</td><td>: ${total} kegiatan</td></tr>
+        <tr><td class="lbl">Kegiatan Selesai</td><td>: ${selesai} dari ${total}</td></tr>
+        <tr><td class="lbl">Persentase Capaian</td><td>: ${persen}%</td></tr>
+    </table>
+    <div class="summary-grid">
+        <div class="summary-card"><div class="num">${total}</div><div class="lbl">Total Kegiatan</div></div>
+        <div class="summary-card"><div class="num" style="color:#10b981">${selesai}</div><div class="lbl">Selesai</div></div>
+        <div class="summary-card"><div class="num" style="color:#3b82f6">${total-selesai}</div><div class="lbl">Berjalan</div></div>
+        <div class="summary-card"><div class="num">${persen}%</div><div class="lbl">Capaian</div></div>
+    </div>
+    <div class="section-title">URAIAN PELAKSANAAN KEGIATAN</div>`;
+
+    if (!grouped.length) {
+        html += `<p style="font-size:13px;color:#64748b;font-style:italic;text-align:center;padding:20px;">
+            Belum ada kegiatan yang tercatat untuk rencana kinerja dan periode ini.</p>`;
+    } else {
         grouped.forEach((k, i) => {
-            const badgeCls = k.status === 'Selesai' ? 'badge-selesai' : 'badge-lain';
+            const bcls = k.status === 'Selesai' ? 'badge-selesai' : 'badge-lain';
             html += `
             <div class="kegiatan-block">
                 <div class="kegiatan-header">
-                    <h3>Kegiatan ${i+1}: ${k.nama_kegiatan}</h3>
-                    <p>Target: ${k.jumlah_target} ${k.satuan_target} &bull; Deadline: ${formatTgl(k.waktu_selesai)} &bull; <span class="badge ${badgeCls}">${k.status}</span></p>
+                    <h3>Kegiatan ${i+1}: ${esc(k.nama_kegiatan)}</h3>
+                    <p>Target: ${k.jumlah_target} ${esc(k.satuan_target)} &bull; Deadline: ${fmtTgl(k.waktu_selesai)} &bull; <span class="badge ${bcls}">${k.status}</span></p>
                 </div>
-
-                <div class="sub-section">A. Pelaksanaan Harian (Logbook)</div>
-                ${renderLogbookBlock(k.logbook)}
-
+                <div class="sub-section">A. Catatan Pelaksanaan Harian (Logbook)</div>
+                ${renderLogbook(k.logbook)}
                 <div class="sub-section">B. Dokumen Bukti Dukung</div>
-                ${renderBuktiBlock(k.bukti)}
+                ${renderBukti(k.bukti)}
             </div>`;
         });
+    }
+    showResult(html);
+}
 
-        render(html);
+// ════════════════════════════════
+// MODE 2: ?token=TOKEN (per kegiatan)
+// ════════════════════════════════
+async function loadLaporanKegiatan(token) {
+    step('Mengambil data kegiatan...');
+
+    const { data: k, error: e } = await supabase
+        .from('kegiatan').select('*, triwulan(nama)').eq('share_token', token).single();
+
+    if (e || !k) {
+        dbg('FAIL kegiatan: ' + (e?.message||'null'));
+        showError('Laporan tidak ditemukan atau link sudah tidak aktif.');
+        return;
     }
 
-    // ── MODE 2: PER KEGIATAN ──
-    async function loadLaporanKegiatan(token) {
-        const { data: k } = await supabase.from('kegiatan').select('*, triwulan(nama)').eq('share_token', token).single();
-        if (!k) { showError('Laporan tidak ditemukan atau link sudah tidak aktif.'); return; }
+    step('Mengambil logbook dan lampiran...');
+    const [r1, r2] = await Promise.all([
+        supabase.from('progres_harian').select('*').eq('kegiatan_id', k.id).order('tanggal'),
+        supabase.from('bukti_dukung').select('*').eq('kegiatan_id', k.id).order('created_at')
+    ]);
 
-        const [{ data: logbook }, { data: bukti }] = await Promise.all([
-            supabase.from('progres_harian').select('*').eq('kegiatan_id', k.id).order('tanggal', { ascending: true }),
-            supabase.from('bukti_dukung').select('*').eq('kegiatan_id', k.id).order('created_at', { ascending: true })
-        ]);
+    const html = `
+    <div class="kop-surat">
+        <h1>LAPORAN PELAKSANAAN KEGIATAN</h1>
+        <h2>${INSTANSI}</h2>
+    </div>
+    <table class="meta-tabel">
+        <tr><td class="lbl">Nama Kegiatan</td><td>: ${esc(k.nama_kegiatan)}</td></tr>
+        <tr><td class="lbl">Rencana Kinerja (KPI)</td><td>: ${esc(k.rencana_kerja_kipapp||'-')}</td></tr>
+        <tr><td class="lbl">Periode / Triwulan</td><td>: ${k.triwulan?.nama||'Tahunan'}</td></tr>
+        <tr><td class="lbl">Target Output</td><td>: ${k.jumlah_target} ${esc(k.satuan_target)}</td></tr>
+        <tr><td class="lbl">Deadline</td><td>: ${fmtTgl(k.waktu_selesai)}</td></tr>
+        <tr><td class="lbl">Status</td><td>: ${k.status}</td></tr>
+    </table>
+    <div class="section-title">A. Ringkasan Pelaksanaan (Logbook Harian)</div>
+    ${renderLogbook(r1.data)}
+    <div class="section-title">B. Lampiran & Dokumen Bukti Dukung</div>
+    ${renderBukti(r2.data)}`;
 
-        const html = `
-        <div class="kop-surat">
-            <h1>LAPORAN PELAKSANAAN KEGIATAN</h1>
-            <h2>${NAMA_INSTANSI}</h2>
-        </div>
+    showResult(html);
+}
 
-        <table class="meta-tabel">
-            <tr><td class="lbl">Nama Kegiatan</td><td>: ${k.nama_kegiatan}</td></tr>
-            <tr><td class="lbl">Rencana Kinerja (KPI)</td><td>: ${k.rencana_kerja_kipapp || '-'}</td></tr>
-            <tr><td class="lbl">Periode / Triwulan</td><td>: ${k.triwulan?.nama || 'Tahunan'}</td></tr>
-            <tr><td class="lbl">Target Output</td><td>: ${k.jumlah_target} ${k.satuan_target}</td></tr>
-            <tr><td class="lbl">Deadline</td><td>: ${formatTgl(k.waktu_selesai)}</td></tr>
-            <tr><td class="lbl">Status</td><td>: ${k.status}</td></tr>
-        </table>
-
-        <div class="section-title">A. Ringkasan Pelaksanaan (Logbook Harian)</div>
-        ${renderLogbookBlock(logbook)}
-
-        <div class="section-title">B. Lampiran & Dokumen Bukti Dukung</div>
-        ${renderBuktiBlock(bukti)}`;
-
-        render(html);
-    }
-
-    function render(html) {
-        document.getElementById('loading').style.display = 'none';
-        const el = document.getElementById('view-content');
-        el.innerHTML = html;
-        el.style.display = 'block';
-        document.title = 'Laporan — ' + NAMA_INSTANSI;
-    }
-
-    function showError(msg) {
-        document.getElementById('loading').innerHTML = `
-            <div style="padding:60px 20px; text-align:center;">
-                <div style="font-size:40px; margin-bottom:16px;">🔒</div>
-                <div style="font-size:16px; color:#64748b;">${msg}</div>
-            </div>`;
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (_tokenLap) loadLaporanTerpadu(_tokenLap);
-        else if (_tokenKeg) loadLaporanKegiatan(_tokenKeg);
-        else showError('Tidak ada token laporan. Hubungi pengirim link.');
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    if      (_tokenLap) loadLaporanTerpadu(_tokenLap);
+    else if (_tokenKeg) loadLaporanKegiatan(_tokenKeg);
+    else showError('Tidak ada token laporan. Akses melalui link yang dibagikan dari dashboard.');
+});
 </script>
 </body>
 </html>
