@@ -126,16 +126,28 @@
                         <div class="field-error" id="t-kpi-err"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="t-jenis">Jenis Pekerjaan *</label>
-                        <select id="t-jenis" required>
-                            <option value="">-- Pilih Jenis --</option>
-                            <option value="KPI Utama">KPI Utama</option>
-                            <option value="Tugas Rutin">Tugas Rutin</option>
-                            <option value="Tambahan">Tambahan</option>
-                            <option value="Inovasi">Inovasi</option>
-                        </select>
-                        <div class="field-error" id="t-jenis-err"></div>
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="t-jenis">Jenis Pekerjaan *</label>
+                            <select id="t-jenis" required>
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="KPI Utama">KPI Utama</option>
+                                <option value="Tugas Rutin">Tugas Rutin</option>
+                                <option value="Tambahan">Tambahan</option>
+                                <option value="Inovasi">Inovasi</option>
+                            </select>
+                            <div class="field-error" id="t-jenis-err"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="t-fase">Fase Proyek</label>
+                            <select id="t-fase">
+                                <option value="Perencanaan">📋 Perencanaan</option>
+                                <option value="Pelaksanaan" selected>⚡ Pelaksanaan</option>
+                                <option value="Pelaporan">📝 Pelaporan</option>
+                                <option value="Evaluasi">🔍 Evaluasi</option>
+                            </select>
+                            <div class="form-hint">Label fase untuk kategorisasi</div>
+                        </div>
                     </div>
 
                     <div class="form-row form-row-2">
@@ -230,11 +242,16 @@
                     <div>
                         <label style="color:rgba(255,255,255,.7); font-size:11px; text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:6px;">Status Kegiatan</label>
                         <select id="ws-status" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.4); border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; margin:0; width:auto;">
-                            <option value="Persiapan">Persiapan</option>
-                            <option value="Pelaksanaan">Pelaksanaan</option>
-                            <option value="Pelaporan">Pelaporan</option>
-                            <option value="Monitoring dan Evaluasi">Monitoring dan Evaluasi</option>
-                            <option value="Selesai">Selesai</option>
+                            <option value="Belum Dimulai">📋 Belum Dimulai</option>
+                            <option value="Sedang Dikerjakan">⚡ Sedang Dikerjakan</option>
+                            <option value="Tertunda">⏳ Tertunda</option>
+                            <option value="Selesai">✅ Selesai</option>
+                        </select>
+                        <select id="ws-fase" style="background:rgba(255,255,255,.1); color:#fff; border:1.5px solid rgba(255,255,255,.3); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; margin:0; width:auto; margin-left:6px;">
+                            <option value="Perencanaan">📋 Perencanaan</option>
+                            <option value="Pelaksanaan">⚡ Pelaksanaan</option>
+                            <option value="Pelaporan">📝 Pelaporan</option>
+                            <option value="Evaluasi">🔍 Evaluasi</option>
                         </select>
                     </div>
                 </div>

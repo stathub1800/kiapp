@@ -50,18 +50,29 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// ── BADGE STATUS ──
+// ── BADGE STATUS KANBAN ──
 function renderBadge(status) {
     const map = {
-        'Persiapan':              'badge-persiapan',
-        'Pelaksanaan':            'badge-pelaksanaan',
-        'Pelaporan':              'badge-pelaporan',
-        'Monitoring dan Evaluasi':'badge-monev',
-        'Selesai':                'badge-selesai',
-        'Batal':                  'badge-batal',
+        'Belum Dimulai':    'badge-persiapan',
+        'Sedang Dikerjakan':'badge-pelaksanaan',
+        'Tertunda':         'badge-monev',
+        'Selesai':          'badge-selesai',
+        'Batal':            'badge-batal',
     };
     const cls = map[status] || 'badge-persiapan';
     return `<span class="badge ${cls}">${status}</span>`;
+}
+
+// ── BADGE FASE PROYEK ──
+function renderFaseBadge(fase) {
+    const map = {
+        'Perencanaan': 'background:#e0f2fe; color:#0369a1;',
+        'Pelaksanaan': 'background:#dcfce7; color:#166534;',
+        'Pelaporan':   'background:#fef9c3; color:#854d0e;',
+        'Evaluasi':    'background:#f3e8ff; color:#6b21a8;',
+    };
+    const style = map[fase] || 'background:#f1f5f9; color:#475569;';
+    return `<span class="badge" style="${style}">${fase || '-'}</span>`;
 }
 
 // ── CONFIRM DIALOG ──

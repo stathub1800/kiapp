@@ -74,15 +74,28 @@ async function loadWorkspaceHeader(id) {
     const statusDdl = document.getElementById('ws-status');
 
     if (titleEl) titleEl.textContent = k.nama_kegiatan;
-    if (metaEl)  metaEl.textContent  = `KPI: ${k.rencana_kerja_kipapp || '-'} · Target: ${k.jumlah_target} ${k.satuan_target} · Deadline: ${formatTgl(k.waktu_selesai)} · Triwulan: ${k.triwulan?.nama || '-'}`;
+    if (metaEl)  metaEl.textContent  = `KPI: ${k.rencana_kerja_kipapp || '-'} · Target: ${k.jumlah_target} ${k.satuan_target} · Deadline: ${formatTgl(k.waktu_selesai)} · Fase: ${k.fase_proyek || '-'} · Triwulan: ${k.triwulan?.nama || '-'}`;
     if (statusDdl) {
         statusDdl.value = k.status;
         statusDdl.onchange = async (e) => {
             statusDdl.disabled = true;
             const { error: upErr } = await supabase.from('kegiatan').update({ status: e.target.value }).eq('id', id);
             if (upErr) { showToast('Gagal update status', 'error'); statusDdl.value = k.status; }
-            else { showToast('Status diperbarui', 'success'); }
+            else { showToast(`Status → ${e.target.value}`, 'success'); }
             statusDdl.disabled = false;
+        };
+    }
+
+    // Fase Proyek dropdown
+    const faseDdl = document.getElementById('ws-fase');
+    if (faseDdl) {
+        faseDdl.value = k.fase_proyek || 'Pelaksanaan';
+        faseDdl.onchange = async (e) => {
+            faseDdl.disabled = true;
+            const { error: upErr } = await supabase.from('kegiatan').update({ fase_proyek: e.target.value }).eq('id', id);
+            if (upErr) { showToast('Gagal update fase', 'error'); faseDdl.value = k.fase_proyek; }
+            else { showToast(`Fase → ${e.target.value}`, 'success'); }
+            faseDdl.disabled = false;
         };
     }
 }
@@ -183,7 +196,7 @@ async function autoAdvanceStatus(id) {
         .eq('id', id)
         .single();
 
-    if (!keg || keg.status !== 'Persiapan') return; // hanya advance dari Persiapan
+    if (!keg || keg.status !== 'Belum Dimulai') return; // hanya advance dari Belum Dimulai
 
     // Hitung jumlah logbook yang sudah ada
     const { count } = await supabase
@@ -195,14 +208,14 @@ async function autoAdvanceStatus(id) {
     if (count >= 1) {
         const { error } = await supabase
             .from('kegiatan')
-            .update({ status: 'Pelaksanaan' })
+            .update({ status: 'Sedang Dikerjakan' })
             .eq('id', id);
 
         if (!error) {
             // Update dropdown status di UI tanpa reload halaman
             const statusDdl = document.getElementById('ws-status');
-            if (statusDdl) statusDdl.value = 'Pelaksanaan';
-            showToast('Status otomatis diubah ke Pelaksanaan ✓', 'success');
+            if (statusDdl) statusDdl.value = 'Sedang Dikerjakan';
+            showToast('Status otomatis → Sedang Dikerjakan ✓', 'success');
         }
     }
 }

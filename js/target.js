@@ -14,8 +14,7 @@ async function loadTargetTab() {
 
 // ── LOAD DATA DROPDOWN ──
 async function loadDropdownData() {
-    if (_triwulanList.length && _kpiList.length) return;
-
+    // Selalu reload KPI (bisa berubah), triwulan cukup sekali
     const [{ data: tri }, { data: kpi }] = await Promise.all([
         supabase.from('triwulan').select('*').order('tahun').order('periode'),
         supabase.from('rencana_kerja_kipapp').select('*').order('kode')
@@ -28,7 +27,7 @@ async function loadDropdownData() {
     const ddlKpi = document.getElementById('t-kpi');
     if (ddlKpi) {
         ddlKpi.innerHTML = '<option value="">-- Pilih Rencana Kinerja --</option>'
-            + _kpiList.map(k => `<option value="${k.nama}">${k.kode ? k.kode + ' - ' : ''}${k.nama}</option>`).join('');
+            + _kpiList.map(k => `<option value="${k.nama}">${k.kode ? k.kode + '. ' : ''}${k.nama}</option>`).join('');
     }
 
     // Set default tanggal mulai = hari ini
@@ -39,15 +38,31 @@ async function loadDropdownData() {
 }
 
 // ── AUTO-DETECT TRIWULAN ──
-function autoDetectTriwulan(tanggalStr) {
-    if (!tanggalStr || !_triwulanList.length) return null;
-    const bulan = new Date(tanggalStr).getMonth() + 1;
-    const tahun = new Date(tanggalStr).getFullYear();
-    const kuartal = Math.ceil(bulan / 3);
+// Mengembalikan { id, nama, found } — id bisa null jika tidak ada di DB
+function getInfoTriwulan(tanggalStr) {
+    if (!tanggalStr) return null;
+    const bulan      = new Date(tanggalStr).getMonth() + 1;
+    const tahun      = new Date(tanggalStr).getFullYear();
+    const kuartal    = Math.ceil(bulan / 3);
     const periodeMap = { 1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4' };
-    const periode = periodeMap[kuartal];
-    const tw = _triwulanList.find(t => t.periode === periode && t.tahun === tahun);
-    return tw ? tw.id : null;
+    const namaMap    = { 1: 'Triwulan I', 2: 'Triwulan II', 3: 'Triwulan III', 4: 'Triwulan IV' };
+    const periode    = periodeMap[kuartal];
+
+    // Coba cocokkan: (1) periode + tahun, (2) periode saja, (3) nama saja
+    const tw = _triwulanList.find(t => t.periode === periode && t.tahun === tahun)
+            || _triwulanList.find(t => t.periode === periode)
+            || _triwulanList.find(t => t.nama === namaMap[kuartal]);
+
+    return {
+        id:    tw ? tw.id : null,
+        nama:  tw ? `${tw.nama} ${tw.tahun}` : `${namaMap[kuartal]} ${tahun}`,
+        found: !!tw
+    };
+}
+
+function autoDetectTriwulan(tanggalStr) {
+    const info = getInfoTriwulan(tanggalStr);
+    return info ? info.id : null;
 }
 
 // ── FORM SUBMIT ──
@@ -75,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
             satuan_target:        document.getElementById('t-satuan').value.trim() || 'Dokumen',
             waktu_pelaksanaan:    document.getElementById('t-mulai').value,
             waktu_selesai:        deadline,
-            status:               'Persiapan',
+            status:               'Belum Dimulai',
+            fase_proyek:          document.getElementById('t-fase').value || 'Perencanaan',
             jenis_pekerjaan:      document.getElementById('t-jenis').value,
         };
 
@@ -98,15 +114,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-info triwulan saat deadline diubah
     const deadlineInput = document.getElementById('t-deadline');
     if (deadlineInput) {
-        deadlineInput.addEventListener('change', () => {
-            const twId  = autoDetectTriwulan(deadlineInput.value);
-            const twObj = _triwulanList.find(t => t.id === twId);
-            const info  = document.getElementById('t-triwulan-info');
-            if (info) {
-                info.textContent = twObj
-                    ? `→ Otomatis masuk ke ${twObj.nama} ${twObj.tahun}`
-                    : 'Triwulan tidak ditemukan, pastikan data triwulan sudah diisi.';
-                info.style.color = twObj ? 'var(--success)' : 'var(--warning)';
+        deadlineInput.addEventListener('change', async () => {
+            const info = getInfoTriwulan(deadlineInput.value);
+            const el   = document.getElementById('t-triwulan-info');
+            if (!info || !el) return;
+
+            if (info.found) {
+                // Triwulan ditemukan di database
+                el.textContent = `✓ Otomatis masuk ke ${info.nama}`;
+                el.style.color = 'var(--success)';
+            } else {
+                // Tidak ditemukan di DB — coba auto-insert
+                el.textContent = `⏳ Membuat data ${info.nama}...`;
+                el.style.color = 'var(--text-muted)';
+
+                const bulan   = new Date(deadlineInput.value).getMonth() + 1;
+                const tahun   = new Date(deadlineInput.value).getFullYear();
+                const kuartal = Math.ceil(bulan / 3);
+                const periodeMap = { 1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4' };
+                const namaMap    = { 1: 'Triwulan I', 2: 'Triwulan II', 3: 'Triwulan III', 4: 'Triwulan IV' };
+
+                // Insert triwulan baru ke database otomatis
+                const { data: newTw, error } = await supabase
+                    .from('triwulan')
+                    .insert([{ nama: namaMap[kuartal], tahun, periode: periodeMap[kuartal] }])
+                    .select()
+                    .single();
+
+                if (!error && newTw) {
+                    _triwulanList.push(newTw);
+                    el.textContent = `✓ ${namaMap[kuartal]} ${tahun} berhasil dibuat & dipilih otomatis`;
+                    el.style.color = 'var(--success)';
+                } else {
+                    // Gagal insert, tetap bisa simpan tanpa triwulan_id
+                    el.textContent = `ℹ Akan disimpan tanpa triwulan (bisa diatur manual nanti)`;
+                    el.style.color = 'var(--text-muted)';
+                }
             }
         });
     }
@@ -170,7 +213,10 @@ async function loadDaftarTarget() {
                 <div style="font-weight:600; font-size:13px;">${k.nama_kegiatan}</div>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${k.rencana_kerja_kipapp || '-'}</div>
             </td>
-            <td><span class="badge badge-kpi" style="font-size:10px;">${k.jenis_pekerjaan || '-'}</span></td>
+            <td>
+                ${renderFaseBadge(k.fase_proyek)}
+                <div style="margin-top:3px;"><span class="badge badge-kpi" style="font-size:10px;">${k.jenis_pekerjaan || '-'}</span></div>
+            </td>
             <td>
                 <div style="font-size:12px; color:var(--text-muted);">${formatTgl(k.waktu_selesai)}</div>
                 <div class="${dl.cls}" style="font-size:11px;">${dl.label}</div>
@@ -188,7 +234,7 @@ async function loadDaftarTarget() {
 
 // ── BATALKAN TARGET ──
 async function batalkanTarget(id) {
-    const ok = await confirmDialog('Batalkan target ini? Status akan diubah ke "Batal" (data tidak dihapus).');
+    const ok = await confirmDialog('Batalkan target ini? Status akan diubah ke Batal (data tidak dihapus).');
     if (!ok) return;
     const { error } = await supabase.from('kegiatan').update({ status: 'Batal' }).eq('id', id);
     if (error) { showToast('Gagal: ' + error.message, 'error'); return; }

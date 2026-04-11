@@ -29,7 +29,7 @@ function renderKPISummary(data) {
 
     const total   = data.length;
     const selesai = data.filter(k => k.status === 'Selesai').length;
-    const aktif   = data.filter(k => k.status !== 'Selesai').length;
+    const aktif   = data.filter(k => k.status !== 'Selesai' && k.status !== 'Batal').length;
     const persen  = total > 0 ? Math.round((selesai / total) * 100) : 0;
 
     const jenis = ['KPI Utama', 'Tugas Rutin', 'Tambahan', 'Inovasi'];
@@ -110,21 +110,27 @@ function renderKanban(data) {
     if (!el) return;
 
     const statuses = [
-        { key: 'Persiapan',             color: '#64748b' },
-        { key: 'Pelaksanaan',           color: '#3b82f6' },
-        { key: 'Pelaporan',             color: '#f59e0b' },
-        { key: 'Monitoring dan Evaluasi', color: '#8b5cf6' },
-        { key: 'Selesai',               color: '#10b981' },
+        { key: 'Belum Dimulai',     color: '#64748b', icon: '📋' },
+        { key: 'Sedang Dikerjakan', color: '#3b82f6', icon: '⚡' },
+        { key: 'Tertunda',          color: '#f59e0b', icon: '⏳' },
+        { key: 'Selesai',           color: '#10b981', icon: '✅' },
     ];
 
     el.innerHTML = statuses.map(s => {
         const items = data.filter(k => k.status === s.key);
         const cards = items.slice(0, 4).map(k => {
             const dl = deadlineLabel(k.waktu_selesai);
+            const faseColor = {
+                'Perencanaan':'#0369a1','Pelaksanaan':'#166534',
+                'Pelaporan':'#854d0e','Evaluasi':'#6b21a8'
+            }[k.fase_proyek] || '#64748b';
             return `
             <div class="kanban-card" onclick="bukaWorkspaceKegiatan('${k.id}')" style="border-left-color:${s.color}">
                 <div class="kanban-card-name">${k.nama_kegiatan}</div>
-                <div class="kanban-card-meta ${dl.cls}">${dl.label}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                    <span style="font-size:10px; font-weight:700; color:${faseColor};">${k.fase_proyek || ''}</span>
+                    <span class="kanban-card-meta ${dl.cls}">${dl.label}</span>
+                </div>
             </div>`;
         }).join('');
 
@@ -153,12 +159,12 @@ function renderKalender(data) {
         title: k.nama_kegiatan,
         start: k.waktu_selesai,
         color: {
-            'Persiapan': '#94a3b8',
-            'Pelaksanaan': '#3b82f6',
-            'Pelaporan': '#f59e0b',
-            'Monitoring dan Evaluasi': '#8b5cf6',
-            'Selesai': '#10b981',
-        }[k.status] || '#94a3b8',
+                'Belum Dimulai':     '#94a3b8',
+                'Sedang Dikerjakan': '#3b82f6',
+                'Tertunda':          '#f59e0b',
+                'Selesai':           '#10b981',
+                'Batal':             '#ef4444',
+            }[k.status] || '#94a3b8',
         extendedProps: { id: k.id }
     }));
 
