@@ -3,114 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Superapp - Pusat Kendali</title>
+    <title>Dashboard — Superapp KPI</title>
     <link rel="stylesheet" href="css/style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
-
-    <style>
-        .tab-container { display: flex; gap: 5px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; background: #fff; padding: 10px 10px 0 10px; border-radius: 8px 8px 0 0; }
-        .tab-btn { background: none; border: none; padding: 12px 20px; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; font-size: 14px; white-space: nowrap; transition: 0.3s; }
-        .tab-btn:hover { color: var(--primary); background: #f8fafc; border-radius: 6px 6px 0 0; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #f8fafc; border-radius: 6px 6px 0 0; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </head>
 <body>
 
-    <div style="background-color: var(--primary); color: white; padding: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <div class="container" style="display: flex; justify-content: space-between; align-items: center; padding: 0;">
+<!-- ══════════════════════════════════════════ TOPBAR -->
+<div class="topbar">
+    <div class="topbar-brand">
+        <div>
+            <h1>Superapp KPI</h1>
+            <span>Pusat Kendali Kinerja Personal</span>
+        </div>
+    </div>
+    <div class="topbar-right">
+        <span id="topbar-date" class="topbar-date"></span>
+        <button onclick="logout()" class="btn btn-outline" style="border-color:rgba(255,255,255,.5); color:#fff; font-size:12px; padding:6px 14px;">🔒 Keluar</button>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════ TAB NAV -->
+<nav class="tab-nav">
+    <button class="tab-btn active" data-tab="tab-dashboard">
+        📊 Dashboard
+    </button>
+    <button class="tab-btn" data-tab="tab-target">
+        🎯 Input Target
+    </button>
+    <button class="tab-btn" data-tab="tab-realisasi">
+        📝 Realisasi
+    </button>
+    <button class="tab-btn" data-tab="tab-report">
+        🖨 Report
+    </button>
+</nav>
+
+<!-- ══════════════════════════════════════════ CONTENT AREA -->
+<div class="page-wrap">
+
+    <!-- ════════════════════════ TAB 1: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div style="display:grid; grid-template-columns: 300px 1fr; gap:20px; align-items:start;">
+
+            <!-- Kolom Kiri: KPI Summary + To-Do -->
             <div>
-                <h2 style="margin: 0;">Pusat Kendali Proyek</h2>
-                <span style="font-size: 12px; opacity: 0.8;">Sistem Manajemen Kinerja & Logbook</span>
+                <div class="card" style="padding:16px;">
+                    <div class="card-header">
+                        <span class="card-title">📊 Capaian Kinerja</span>
+                        <button class="btn btn-ghost btn-xs" onclick="loadDashboard()">↺ Refresh</button>
+                    </div>
+                    <div id="dash-kpi-summary">
+                        <div class="skeleton" style="height:120px; border-radius:8px; margin-bottom:12px;"></div>
+                        <div class="skeleton" style="height:14px; margin-bottom:8px;"></div>
+                        <div class="skeleton" style="height:14px; margin-bottom:8px;"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding:16px;">
+                    <div class="card-header">
+                        <span class="card-title">⚡ Deadline Terdekat</span>
+                    </div>
+                    <div id="dash-todo">
+                        <div class="skeleton" style="height:14px; margin-bottom:10px;"></div>
+                        <div class="skeleton" style="height:14px; margin-bottom:10px;"></div>
+                        <div class="skeleton" style="height:14px;"></div>
+                    </div>
+                </div>
             </div>
-            <button onclick="logout()" class="btn-primary" style="background: transparent; border: 1px solid white;">🔒 Keluar Keluar</button>
+
+            <!-- Kolom Kanan: Kanban + Kalender -->
+            <div>
+                <div class="card" style="padding:16px;">
+                    <div class="card-header">
+                        <span class="card-title">📋 Papan Alur Kerja</span>
+                    </div>
+                    <div id="dash-kanban" class="kanban-board">
+                        <div class="skeleton" style="width:180px; height:120px; border-radius:8px;"></div>
+                        <div class="skeleton" style="width:180px; height:120px; border-radius:8px;"></div>
+                        <div class="skeleton" style="width:180px; height:120px; border-radius:8px;"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="padding:16px;">
+                    <div class="card-header">
+                        <span class="card-title">📅 Kalender Kegiatan</span>
+                    </div>
+                    <div id="dash-calendar"></div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="container" style="margin-top: 20px;">
+    <!-- ════════════════════════ TAB 2: INPUT TARGET -->
+    <div id="tab-target" class="tab-content">
 
-        <div class="tab-container">
-            <button class="tab-btn active" onclick="openTab('tab-dashboard', this)">📊 1. Dashboard Utama</button>
-            <button class="tab-btn" onclick="openTab('tab-target', this)">🎯 2. Input Target</button>
-            <button class="tab-btn" onclick="openTab('tab-realisasi', this)">📝 3. Realisasi (Progres)</button>
-            <button class="tab-btn" onclick="openTab('tab-laporan', this)">🖨️ 4. Report & Laporan</button>
-        </div>
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start;">
 
-        <div id="tab-dashboard" class="tab-content active">
-            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
-                
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                    <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border: none; display: flex; flex-direction: column; justify-content: center;">
-                        <h3 style="margin-top:0;">Progress Kinerja Anda</h3>
-                        <div id="dashProgressRingkas">Memuat data...</div>
-                    </div>
-                    
-                    <div class="card">
-                        <h3 style="margin-top:0; color: var(--danger);">🚨 Deadline Terdekat</h3>
-                        <div id="dashTodoList">Memuat tugas...</div>
+            <!-- Form Input -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🎯 Tambah Target Baru</div>
+                        <div class="card-subtitle">Rencana pekerjaan / to-do list</div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-                    <div class="card" style="padding: 15px;">
-                        <h3 style="margin-top:0;">Papan Alur Kerja (Otomatis)</h3>
-                        <div id="dashKanban" style="display: flex; gap: 10px; overflow-x: auto;">Memuat papan...</div>
+                <form id="formTarget">
+                    <div class="form-group">
+                        <label for="t-nama">Nama Pekerjaan / Proyek *</label>
+                        <input type="text" id="t-nama" placeholder="Contoh: Pemantauan Ground Check SBR" required>
+                        <div class="field-error" id="t-nama-err"></div>
                     </div>
-                    <div class="card" style="padding: 15px;">
-                        <h3 style="margin-top:0;">Kalender Proyek</h3>
-                        <div id="calendar" style="font-size: 12px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div id="tab-target" class="tab-content">
-            <div class="card" style="max-width: 800px; margin: 0 auto;">
-                <h2 style="color: var(--primary); text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px;">Form Rencana Target Pekerjaan</h2>
-                <form id="formInputTarget">
-                    <p style="text-align:center; color:gray;">[Area form target siap diisi]</p>
+                    <div class="form-group">
+                        <label for="t-kpi">Rencana Kinerja (KPI) *</label>
+                        <select id="t-kpi" required>
+                            <option value="">-- Memuat KPI... --</option>
+                        </select>
+                        <div class="field-error" id="t-kpi-err"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="t-jenis">Jenis Pekerjaan *</label>
+                        <select id="t-jenis" required>
+                            <option value="">-- Pilih Jenis --</option>
+                            <option value="KPI Utama">KPI Utama</option>
+                            <option value="Tugas Rutin">Tugas Rutin</option>
+                            <option value="Tambahan">Tambahan</option>
+                            <option value="Inovasi">Inovasi</option>
+                        </select>
+                        <div class="field-error" id="t-jenis-err"></div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="t-jumlah">Target Kuantitas</label>
+                            <input type="number" id="t-jumlah" value="1" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="t-satuan">Satuan</label>
+                            <input type="text" id="t-satuan" value="Dokumen" placeholder="Dokumen, Laporan, dll" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row form-row-2">
+                        <div class="form-group">
+                            <label for="t-mulai">Tanggal Mulai</label>
+                            <input type="date" id="t-mulai">
+                        </div>
+                        <div class="form-group">
+                            <label for="t-deadline">Deadline Selesai *</label>
+                            <input type="date" id="t-deadline" required>
+                            <div class="field-error" id="t-deadline-err"></div>
+                            <div id="t-triwulan-info" class="form-hint"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="t-deskripsi">Catatan / Deskripsi (opsional)</label>
+                        <textarea id="t-deskripsi" rows="2" placeholder="Detail pekerjaan, instruksi, dll..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">
+                        + Simpan Target
+                    </button>
                 </form>
             </div>
-        </div>
 
-        <div id="tab-realisasi" class="tab-content">
+            <!-- Daftar Target -->
             <div class="card">
-                <h3 style="margin-top:0;">Pilih Pekerjaan untuk Diupdate:</h3>
-                <select id="pilihRealisasi" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 20px;">
-                    <option value="">-- Memuat daftar pekerjaan aktif... --</option>
-                </select>
-                
-                <hr style="border:0; border-top: 1px solid #eee; margin-bottom: 20px;">
-                
-                <div id="areaWorkspaceRealisasi" style="display: none;">
-                    <p style="text-align:center; color:gray;">[Area workspace realisasi siap di-render]</p>
+                <div class="card-header">
+                    <div class="card-title">📋 Semua Target</div>
+                    <button class="btn btn-ghost btn-xs" onclick="loadDaftarTarget()">↺ Refresh</button>
                 </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nama Kegiatan</th>
+                                <th>Jenis</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="target-tbody">
+                            <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ════════════════════════ TAB 3: REALISASI -->
+    <div id="tab-realisasi" class="tab-content">
+
+        <!-- Dropdown pilih kegiatan -->
+        <div class="card" style="margin-bottom:0; border-radius:var(--radius) var(--radius) 0 0; border-bottom:0;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div style="flex:1;">
+                    <label style="margin-bottom:6px;">Pilih Pekerjaan yang Akan Diupdate</label>
+                    <select id="pilih-realisasi" style="margin:0;">
+                        <option value="">-- Pilih pekerjaan untuk diupdate --</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:20px;" onclick="loadRealisasiDropdown()">↺</button>
             </div>
         </div>
 
-        <div id="tab-laporan" class="tab-content">
-            <div class="card">
-                <h3 style="margin-top:0; color: var(--success);">Generate Laporan Rencana Kinerja</h3>
-                <p style="font-size: 14px; color: var(--text-muted);">Sistem akan menghimpun semua proyek, logbook, dan bukti dukung berdasarkan Rencana Kinerja / KPI yang sama menjadi 1 landing page laporan resmi.</p>
-                
-                <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <select id="pilihLaporanKpi" style="flex: 2; padding: 12px;">
-                        <option value="">-- Pilih Rencana Kinerja (KPI) --</option>
-                    </select>
-                    <button class="btn-primary" id="btnBuatLaporan" style="flex: 1; background: var(--success);">Buat Laporan Terpadu</button>
+        <!-- Panel Workspace (tersembunyi sampai pilih kegiatan) -->
+        <div id="panel-workspace" style="display:none;">
+
+            <!-- Header Workspace -->
+            <div style="background:linear-gradient(to right, #1e2d5e, #1e3a8a); color:#fff; padding:18px 24px; border-radius:0 0 0 0; margin-bottom:0;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 id="ws-title" style="margin:0; font-size:20px; font-weight:700;">Memuat...</h2>
+                        <p id="ws-meta" style="margin:6px 0 0; font-size:12px; opacity:.75;"></p>
+                    </div>
+                    <div>
+                        <label style="color:rgba(255,255,255,.7); font-size:11px; text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:6px;">Status Kegiatan</label>
+                        <select id="ws-status" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.4); border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; margin:0; width:auto;">
+                            <option value="Persiapan">Persiapan</option>
+                            <option value="Pelaksanaan">Pelaksanaan</option>
+                            <option value="Pelaporan">Pelaporan</option>
+                            <option value="Monitoring dan Evaluasi">Monitoring dan Evaluasi</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Grid 2 kolom: Logbook | Bukti Dukung -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius) var(--radius); overflow:hidden;">
+
+                <!-- Kolom Logbook -->
+                <div style="padding:20px; border-right:1px solid var(--border); background:#fff;">
+                    <h3 style="margin:0 0 4px; font-size:15px; color:var(--primary);">📝 Catatan Progres Harian</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0 0 16px;">Catat apa yang dikerjakan hari ini.</p>
+
+                    <form id="form-logbook" style="margin-bottom:20px;">
+                        <textarea id="log-teks" rows="3" placeholder="Contoh: Melakukan rapat persiapan dengan tim lapangan, membahas jadwal pendataan..." style="margin-bottom:8px;" required></textarea>
+                        <div style="display:flex; gap:8px;">
+                            <input type="date" id="log-tanggal" style="flex:1; margin:0;" required>
+                            <button type="submit" class="btn btn-primary" style="flex:2; justify-content:center;">+ Catat Progres</button>
+                        </div>
+                    </form>
+
+                    <div id="list-logbook">
+                        <div class="empty-state"><div class="empty-icon">📝</div><p>Belum ada catatan.</p></div>
+                    </div>
+                </div>
+
+                <!-- Kolom Bukti Dukung -->
+                <div style="padding:20px; background:#fafafa;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <h3 style="margin:0; font-size:15px; color:var(--primary);">📎 Dokumen Bukti Dukung</h3>
+                        <button id="btn-buka-drive" class="btn btn-secondary btn-sm">📁 Buka GDrive</button>
+                    </div>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0 0 16px;">Lampirkan link dokumen dari Google Drive.</p>
+
+                    <div class="form-group">
+                        <label>Link Dokumen (URL)</label>
+                        <input type="url" id="bukti-url" placeholder="Paste link Google Drive/Docs/Sheets/PDF...">
+                        <div id="bukti-preview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Dokumen *</label>
+                        <input type="text" id="bukti-nama" placeholder="Contoh: Laporan Ground Check Mei 2025">
+                    </div>
+                    <button id="btn-lampirkan" class="btn btn-primary w-full" style="justify-content:center; margin-bottom:16px;">
+                        Lampirkan Dokumen
+                    </button>
+
+                    <div id="list-bukti">
+                        <div class="empty-state"><div class="empty-icon">📎</div><p>Belum ada lampiran.</p></div>
+                    </div>
+
+                    <hr style="border:0; border-top:1px solid var(--border); margin:16px 0;">
+
+                    <div style="background:var(--success-bg); border:1px solid var(--success); border-radius:8px; padding:14px; text-align:center;">
+                        <p style="font-size:13px; margin:0 0 10px; color:#065f46; font-weight:600;">Siap membagikan laporan kegiatan ini?</p>
+                        <button class="btn btn-success btn-sm w-full" style="justify-content:center;" onclick="generateShareKegiatan()">🔗 Buat Share Link Kegiatan</button>
+                        <div id="share-kegiatan-info" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/supabase.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app-rombak.js"></script> 
+    <!-- ════════════════════════ TAB 4: REPORT -->
+    <div id="tab-report" class="tab-content">
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start;">
+
+            <!-- Form Generate -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🖨 Generate Laporan Terpadu</div>
+                        <div class="card-subtitle">Himpun semua kegiatan dalam 1 KPI & triwulan menjadi 1 laporan resmi</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="r-kpi">Rencana Kinerja (KPI)</label>
+                    <select id="r-kpi">
+                        <option value="">-- Pilih Rencana Kinerja --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="r-triwulan">Periode / Triwulan</label>
+                    <select id="r-triwulan">
+                        <option value="">-- Pilih Triwulan --</option>
+                    </select>
+                </div>
+
+                <button id="btn-generate-report" class="btn btn-success w-full" style="justify-content:center; padding:12px;">
+                    🖨 Generate & Buat Link
+                </button>
+
+                <div id="report-share-info" style="margin-top:12px;"></div>
+            </div>
+
+            <!-- Daftar Laporan Tersimpan -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📄 Laporan Tersimpan</div>
+                    <button class="btn btn-ghost btn-xs" onclick="loadSavedReports()">↺ Refresh</button>
+                </div>
+                <div id="saved-reports">
+                    <div class="empty-state"><div class="empty-icon">📄</div><p>Belum ada laporan.</p></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div><!-- /page-wrap -->
+
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/target.js"></script>
+<script src="js/realisasi.js"></script>
+<script src="js/bukti.js"></script>
+<script src="js/report.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+// Share link per kegiatan (dari tab Realisasi)
+async function generateShareKegiatan() {
+    if (!window.kegiatanId) { showToast('Pilih kegiatan dulu', 'warning'); return; }
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = 'Memproses...';
+
+    const token = generateToken(20);
+    const { error } = await supabase.from('kegiatan').update({ share_token: token }).eq('id', window.kegiatanId);
+
+    if (error) { showToast('Gagal buat link: ' + error.message, 'error'); }
+    else {
+        const baseUrl  = window.location.href.split('/').slice(0,-1).join('/');
+        const shareUrl = `${baseUrl}/view.html?token=${token}`;
+        document.getElementById('share-kegiatan-info').innerHTML = `
+            <div style="display:flex; gap:6px;">
+                <input type="text" value="${shareUrl}" readonly style="flex:1; font-size:11px; padding:6px;" onclick="this.select()">
+                <button class="btn btn-success btn-xs" onclick="copyToClipboard('${shareUrl}')">Salin</button>
+            </div>`;
+        showToast('Share link dibuat!', 'success');
+    }
+
+    btn.disabled = false; btn.textContent = '🔗 Buat Share Link Kegiatan';
+}
+</script>
 </body>
 </html>

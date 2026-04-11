@@ -3,140 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Proyek Terpadu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Laporan — Superapp KPI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #cbd5e1; font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 20px; }
-        .kertas-a4 { background: white; max-width: 800px; margin: 0 auto; padding: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 8px; }
-        .kop-surat { text-align: center; border-bottom: 4px solid #1e293b; padding-bottom: 15px; margin-bottom: 30px; }
-        .kop-surat h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; }
-        .kop-surat h2 { margin: 5px 0 0 0; font-size: 16px; color: #475569; font-weight: 400; }
-        
-        .meta-tabel { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .meta-tabel td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 14px; vertical-align: top; }
-        .meta-tabel td.label { font-weight: 600; color: #334155; width: 30%; }
-        
-        .section-title { background: #f1f5f9; padding: 10px 15px; border-left: 4px solid #2563eb; font-size: 15px; font-weight: 700; color: #1e3a8a; margin-top: 30px; margin-bottom: 15px; }
-        
-        /* Timeline Logbook */
-        .timeline { border-left: 2px solid #cbd5e1; margin-left: 10px; padding-left: 20px; margin-bottom: 30px; }
-        .timeline-item { position: relative; margin-bottom: 20px; }
-        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #2563eb; border-radius: 50%; }
-        .tl-date { font-weight: 700; color: #0f172a; font-size: 14px; margin-bottom: 5px; }
-        .tl-desc { color: #334155; font-size: 14px; line-height: 1.6; text-align: justify; white-space: pre-wrap; }
-
-        .print-btn { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        
+        * { box-sizing: border-box; }
+        body { background: #cbd5e1; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 20px; }
+        .kertas-a4 { background: #fff; max-width: 820px; margin: 0 auto; padding: 50px; box-shadow: 0 10px 30px rgba(0,0,0,.12); border-radius: 4px; }
+        .kop-surat { text-align: center; border-bottom: 3px solid #1e293b; padding-bottom: 16px; margin-bottom: 30px; }
+        .kop-surat h1 { margin: 0; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #0f172a; }
+        .kop-surat h2 { margin: 5px 0 0; font-size: 14px; color: #475569; font-weight: 400; }
+        .kop-surat p  { margin: 4px 0 0; font-size: 13px; color: #64748b; }
+        .meta-tabel { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+        .meta-tabel td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: top; }
+        .meta-tabel td.lbl { font-weight: 700; color: #334155; width: 32%; }
+        .section-title { background: #f1f5f9; padding: 9px 14px; border-left: 4px solid #1e3a8a; font-size: 14px; font-weight: 700; color: #1e3a8a; margin: 24px 0 14px; border-radius: 0 4px 4px 0; }
+        .sub-section { background: #f8fafc; padding: 7px 12px; border-left: 3px solid #3b82f6; font-size: 13px; font-weight: 700; color: #334155; margin: 18px 0 10px; border-radius: 0 4px 4px 0; }
+        .timeline { border-left: 2px solid #cbd5e1; margin-left: 10px; padding-left: 20px; margin-bottom: 24px; }
+        .timeline-item { position: relative; margin-bottom: 18px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 3px; width: 10px; height: 10px; background: #2563eb; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 2px #2563eb; }
+        .tl-date { font-weight: 700; color: #0f172a; font-size: 13px; margin-bottom: 4px; }
+        .tl-desc { color: #334155; font-size: 13px; line-height: 1.7; white-space: pre-wrap; text-align: justify; }
+        .kegiatan-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .kegiatan-header { background: linear-gradient(to right, #f1f5f9, #fff); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; border-left: 4px solid #3b82f6; }
+        .kegiatan-header h3 { margin: 0; font-size: 15px; color: #1e3a8a; }
+        .kegiatan-header p  { margin: 4px 0 0; font-size: 12px; color: #64748b; }
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-selesai { background: #d1fae5; color: #065f46; }
+        .badge-lain    { background: #dbeafe; color: #1d4ed8; }
+        .iframe-container { margin-bottom: 28px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .iframe-label { background: #f8fafc; padding: 10px 14px; font-weight: 700; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+        .print-btn { background: #1e293b; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; position: fixed; top: 20px; right: 20px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,.2); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+        .summary-card .num { font-size: 24px; font-weight: 700; color: #1e3a8a; }
+        .summary-card .lbl { font-size: 11px; color: #64748b; margin-top: 3px; }
         @media print {
-            body { background: white; padding: 0; }
-            .kertas-a4 { box-shadow: none; padding: 0; width: 100%; max-width: 100%; border-radius: 0; }
+            body { background: #fff; padding: 0; }
+            .kertas-a4 { box-shadow: none; padding: 20mm; max-width: 100%; border-radius: 0; }
             .print-btn { display: none; }
-            .iframe-container { page-break-inside: avoid; margin-bottom: 30px; }
-            .link-bantuan { display: none !important; }
+            .iframe-container { page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 
-    <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+<button class="print-btn no-print" onclick="window.print()">🖨 Cetak / PDF</button>
 
-    <div class="kertas-a4" id="viewerContent">
-        <div style="text-align: center; padding: 50px;">Memuat dokumen resmi...</div>
-    </div>
+<div id="loading" style="text-align:center; padding:60px 20px;">
+    <div style="font-size:16px; color:#64748b;">Memuat dokumen resmi...</div>
+</div>
 
-    <script src="js/config.js"></script>
-    <script src="js/supabase.js"></script>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+<div class="kertas-a4" id="view-content" style="display:none;"></div>
 
-        // Fungsi Cerdas Embed Google Drive Anda
-        function getEmbedUrl(url) {
-            if (!url) return url;
-            if (url.includes('drive.google.com/file/d/')) return url.replace(/\/view.*$/, '/preview');
-            if (url.includes('docs.google.com')) return url.replace(/\/edit.*$/, '/preview');
-            return url;
+<script src="js/config.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+    const _params    = new URLSearchParams(window.location.search);
+    const _tokenKeg  = _params.get('token');    // mode per-kegiatan
+    const _tokenLap  = _params.get('laporan');  // mode laporan terpadu
+
+    function getEmbedUrl(url) {
+        if (!url) return url;
+        if (url.includes('drive.google.com/file/d/')) return url.replace(/\/view.*$/, '/preview');
+        if (url.includes('docs.google.com')) return url.replace(/\/edit.*$/, '/preview');
+        return url;
+    }
+
+    function formatTgl(d) {
+        if (!d) return '-';
+        return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function formatTglPanjang(d) {
+        if (!d) return '-';
+        return new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function renderBuktiBlock(buktis) {
+        if (!buktis || !buktis.length) return '<p style="font-size:13px; font-style:italic; color:#94a3b8;">Tidak ada lampiran dokumen.</p>';
+        return buktis.map((file, i) => {
+            const embedUrl = getEmbedUrl(file.file_url);
+            let embedHtml;
+            if (embedUrl && embedUrl.includes('/preview')) {
+                embedHtml = `<iframe src="${embedUrl}" width="100%" height="600px" style="border:none; display:block;"></iframe>`;
+            } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_url)) {
+                embedHtml = `<img src="${file.file_url}" style="width:100%; display:block;">`;
+            } else {
+                embedHtml = `<div style="padding:28px; text-align:center;"><a href="${file.file_url}" target="_blank" style="color:#2563eb; font-weight:700; font-size:14px;">Buka Lampiran Eksternal ↗</a></div>`;
+            }
+            return `<div class="iframe-container">
+                <div class="iframe-label">Lampiran ${i+1}: ${file.penjelasan || file.file_name}</div>
+                ${embedHtml}
+            </div>`;
+        }).join('');
+    }
+
+    function renderLogbookBlock(logbook) {
+        if (!logbook || !logbook.length) return '<p style="font-size:13px; font-style:italic; color:#94a3b8;">Belum ada catatan pelaksanaan.</p>';
+        return `<div class="timeline">
+            ${logbook.map(l => `
+            <div class="timeline-item">
+                <div class="tl-date">${formatTglPanjang(l.tanggal)}</div>
+                <div class="tl-desc">${(l.deskripsi || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    // ── MODE 1: LAPORAN TERPADU ──
+    async function loadLaporanTerpadu(token) {
+        const { data: lap } = await supabase.from('laporan_kpi').select('*, triwulan(nama, tahun, periode)').eq('share_token', token).single();
+        if (!lap) { showError('Laporan tidak ditemukan atau link sudah tidak aktif.'); return; }
+
+        const { data: kegiatan } = await supabase
+            .from('kegiatan')
+            .select('*, triwulan(nama)')
+            .eq('rencana_kerja_kipapp', lap.nama_kpi)
+            .eq('triwulan_id', lap.triwulan_id)
+            .neq('status', 'Batal')
+            .order('waktu_selesai', { ascending: true });
+
+        const kegIds = (kegiatan || []).map(k => k.id);
+        let logbooks = [], buktis = [];
+
+        if (kegIds.length) {
+            const [{ data: lb }, { data: bk }] = await Promise.all([
+                supabase.from('progres_harian').select('*').in('kegiatan_id', kegIds).order('tanggal', { ascending: true }),
+                supabase.from('bukti_dukung').select('*').in('kegiatan_id', kegIds).order('created_at', { ascending: true })
+            ]);
+            logbooks = lb || []; buktis = bk || [];
         }
 
-        async function loadViewerData() {
-            if (!token) return;
+        const grouped = (kegiatan || []).map(k => ({
+            ...k,
+            logbook: logbooks.filter(l => l.kegiatan_id === k.id),
+            bukti:   buktis.filter(b => b.kegiatan_id === k.id)
+        }));
 
-            // Tarik data lengkap
-            const { data: keg } = await supabase.from('kegiatan').select('*, triwulan(nama)').eq('share_token', token).single();
-            if (!keg) return;
+        const total   = grouped.length;
+        const selesai = grouped.filter(k => k.status === 'Selesai').length;
+        const persen  = total > 0 ? Math.round((selesai / total) * 100) : 0;
+        const twNama  = lap.triwulan ? `${lap.triwulan.nama} ${lap.triwulan.tahun}` : '-';
 
-            const { data: logbook } = await supabase.from('progres_harian').select('*').eq('kegiatan_id', keg.id).order('tanggal', { ascending: true });
-            const { data: bukti } = await supabase.from('bukti_dukung').select('*').eq('kegiatan_id', keg.id).order('created_at', { ascending: true });
+        let html = `
+        <div class="kop-surat">
+            <h1>LAPORAN CAPAIAN RENCANA KINERJA</h1>
+            <h2>${NAMA_INSTANSI}</h2>
+            <p>${twNama}</p>
+        </div>
 
-            const tglDeadline = new Date(keg.waktu_selesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        <table class="meta-tabel">
+            <tr><td class="lbl">Rencana Kinerja (KPI)</td><td>: ${lap.nama_kpi}</td></tr>
+            <tr><td class="lbl">Periode</td><td>: ${twNama}</td></tr>
+            <tr><td class="lbl">Total Kegiatan</td><td>: ${total} kegiatan</td></tr>
+            <tr><td class="lbl">Kegiatan Selesai</td><td>: ${selesai} dari ${total}</td></tr>
+            <tr><td class="lbl">Persentase Capaian</td><td>: ${persen}%</td></tr>
+        </table>
 
-            let html = `
-                <div class="kop-surat">
-                    <h1>LAPORAN PELAKSANAAN KEGIATAN</h1>
-                    <h2>BADAN PUSAT STATISTIK PROVINSI LAMPUNG</h2>
+        <div class="summary-grid">
+            <div class="summary-card"><div class="num">${total}</div><div class="lbl">Total Kegiatan</div></div>
+            <div class="summary-card"><div class="num" style="color:#10b981;">${selesai}</div><div class="lbl">Selesai</div></div>
+            <div class="summary-card"><div class="num" style="color:#3b82f6;">${total - selesai}</div><div class="lbl">Berjalan</div></div>
+            <div class="summary-card"><div class="num">${persen}%</div><div class="lbl">Capaian</div></div>
+        </div>
+
+        <div class="section-title">URAIAN PELAKSANAAN KEGIATAN</div>`;
+
+        grouped.forEach((k, i) => {
+            const badgeCls = k.status === 'Selesai' ? 'badge-selesai' : 'badge-lain';
+            html += `
+            <div class="kegiatan-block">
+                <div class="kegiatan-header">
+                    <h3>Kegiatan ${i+1}: ${k.nama_kegiatan}</h3>
+                    <p>Target: ${k.jumlah_target} ${k.satuan_target} &bull; Deadline: ${formatTgl(k.waktu_selesai)} &bull; <span class="badge ${badgeCls}">${k.status}</span></p>
                 </div>
 
-                <table class="meta-tabel">
-                    <tr><td class="label">Nama Kegiatan</td><td>: ${keg.nama_kegiatan}</td></tr>
-                    <tr><td class="label">Rencana Kinerja (KPI)</td><td>: ${keg.rencana_kerja_kipapp || '-'}</td></tr>
-                    <tr><td class="label">Periode / Wadah</td><td>: ${keg.triwulan?.nama || 'Tahunan'}</td></tr>
-                    <tr><td class="label">Target Output</td><td>: ${keg.jumlah_target || 1} ${keg.satuan_target || 'Dokumen'}</td></tr>
-                    <tr><td class="label">Deadline</td><td>: ${tglDeadline}</td></tr>
-                </table>
+                <div class="sub-section">A. Pelaksanaan Harian (Logbook)</div>
+                ${renderLogbookBlock(k.logbook)}
 
-                <div class="section-title">A. Ringkasan Pelaksanaan (Logbook Harian)</div>
-            `;
+                <div class="sub-section">B. Dokumen Bukti Dukung</div>
+                ${renderBuktiBlock(k.bukti)}
+            </div>`;
+        });
 
-            // RENDER LOGBOOK
-            if (!logbook || logbook.length === 0) {
-                html += `<p style="font-size: 14px; font-style: italic; color: #64748b;">Belum ada catatan pelaksanaan harian.</p>`;
-            } else {
-                html += `<div class="timeline">`;
-                logbook.forEach(log => {
-                    const tgl = new Date(log.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                    html += `
-                        <div class="timeline-item">
-                            <div class="tl-date">${tgl}</div>
-                            <div class="tl-desc">${log.deskripsi}</div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            }
+        render(html);
+    }
 
-            html += `<div class="section-title">B. Lampiran & Dokumen Bukti</div>`;
+    // ── MODE 2: PER KEGIATAN ──
+    async function loadLaporanKegiatan(token) {
+        const { data: k } = await supabase.from('kegiatan').select('*, triwulan(nama)').eq('share_token', token).single();
+        if (!k) { showError('Laporan tidak ditemukan atau link sudah tidak aktif.'); return; }
 
-            // RENDER BUKTI DUKUNG (Cerdas)
-            if (!bukti || bukti.length === 0) {
-                html += `<p style="font-size: 14px; font-style: italic; color: #64748b;">Tidak ada lampiran dokumen.</p>`;
-            } else {
-                bukti.forEach((file, index) => {
-                    let embedUrl = getEmbedUrl(file.file_url);
-                    
-                    html += `
-                        <div class="iframe-container" style="margin-bottom: 40px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                            <div style="background: #f8fafc; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #e2e8f0; font-size: 14px;">
-                                Lampiran ${index + 1}: ${file.penjelasan}
-                            </div>
-                    `;
+        const [{ data: logbook }, { data: bukti }] = await Promise.all([
+            supabase.from('progres_harian').select('*').eq('kegiatan_id', k.id).order('tanggal', { ascending: true }),
+            supabase.from('bukti_dukung').select('*').eq('kegiatan_id', k.id).order('created_at', { ascending: true })
+        ]);
 
-                    // Selalu usahakan Iframe jika itu Google Drive
-                    if (embedUrl.includes('/preview')) {
-                        html += `<iframe src="${embedUrl}" width="100%" height="650px" style="border: none; display: block;"></iframe>`;
-                    } else if (file.file_url.match(/\.(jpeg|jpg|gif|png)$/) != null) {
-                        html += `<img src="${file.file_url}" style="width: 100%; display: block;">`;
-                    } else {
-                        html += `<div style="padding: 30px; text-align: center;"><a href="${file.file_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: bold; font-size: 16px;">Buka Tautan Lampiran Eksternal &rarr;</a></div>`;
-                    }
+        const html = `
+        <div class="kop-surat">
+            <h1>LAPORAN PELAKSANAAN KEGIATAN</h1>
+            <h2>${NAMA_INSTANSI}</h2>
+        </div>
 
-                    html += `</div>`;
-                });
-            }
+        <table class="meta-tabel">
+            <tr><td class="lbl">Nama Kegiatan</td><td>: ${k.nama_kegiatan}</td></tr>
+            <tr><td class="lbl">Rencana Kinerja (KPI)</td><td>: ${k.rencana_kerja_kipapp || '-'}</td></tr>
+            <tr><td class="lbl">Periode / Triwulan</td><td>: ${k.triwulan?.nama || 'Tahunan'}</td></tr>
+            <tr><td class="lbl">Target Output</td><td>: ${k.jumlah_target} ${k.satuan_target}</td></tr>
+            <tr><td class="lbl">Deadline</td><td>: ${formatTgl(k.waktu_selesai)}</td></tr>
+            <tr><td class="lbl">Status</td><td>: ${k.status}</td></tr>
+        </table>
 
-            document.getElementById('viewerContent').innerHTML = html;
-        }
+        <div class="section-title">A. Ringkasan Pelaksanaan (Logbook Harian)</div>
+        ${renderLogbookBlock(logbook)}
 
-        document.addEventListener('DOMContentLoaded', loadViewerData);
-    </script>
+        <div class="section-title">B. Lampiran & Dokumen Bukti Dukung</div>
+        ${renderBuktiBlock(bukti)}`;
+
+        render(html);
+    }
+
+    function render(html) {
+        document.getElementById('loading').style.display = 'none';
+        const el = document.getElementById('view-content');
+        el.innerHTML = html;
+        el.style.display = 'block';
+        document.title = 'Laporan — ' + NAMA_INSTANSI;
+    }
+
+    function showError(msg) {
+        document.getElementById('loading').innerHTML = `
+            <div style="padding:60px 20px; text-align:center;">
+                <div style="font-size:40px; margin-bottom:16px;">🔒</div>
+                <div style="font-size:16px; color:#64748b;">${msg}</div>
+            </div>`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (_tokenLap) loadLaporanTerpadu(_tokenLap);
+        else if (_tokenKeg) loadLaporanKegiatan(_tokenKeg);
+        else showError('Tidak ada token laporan. Hubungi pengirim link.');
+    });
+</script>
 </body>
 </html>
