@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruang Kerja — Supoyo Muhammad </title>
+    <title>Dashboard — Superapp KPI</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
@@ -14,8 +14,8 @@
 <div class="topbar">
     <div class="topbar-brand">
         <div>
-            <h1>Ruang Kerja</h1>
-            <span>Supoyo Muhammad</span>
+            <h1>Superapp KPI</h1>
+            <span>Pusat Kendali Kinerja Personal</span>
         </div>
     </div>
     <div class="topbar-right">
@@ -46,7 +46,7 @@
 
     <!-- ════════════════════════ TAB 1: DASHBOARD -->
     <div id="tab-dashboard" class="tab-content active">
-        <div style="display:grid; grid-template-columns: 300px 1fr; gap:20px; align-items:start;">
+        <div class="dash-grid-main">
 
             <!-- Kolom Kiri: KPI Summary + To-Do -->
             <div>
@@ -101,7 +101,7 @@
     <!-- ════════════════════════ TAB 2: INPUT TARGET -->
     <div id="tab-target" class="tab-content">
 
-        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; align-items:start;">
+        <div class="target-grid">
 
             <!-- Form Input -->
             <div class="card">
@@ -234,21 +234,21 @@
         <div id="panel-workspace" style="display:none;">
 
             <!-- Header Workspace -->
-            <div style="background:linear-gradient(to right, #1e2d5e, #1e3a8a); color:#fff; padding:18px 24px; border-radius:0 0 0 0; margin-bottom:0;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div class="ws-header">
+                <div class="ws-header-inner">
                     <div>
                         <h2 id="ws-title" style="margin:0; font-size:20px; font-weight:700;">Memuat...</h2>
                         <p id="ws-meta" style="margin:6px 0 0; font-size:12px; opacity:.75;"></p>
                     </div>
                     <div>
                         <label style="color:rgba(255,255,255,.7); font-size:11px; text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:6px;">Status Kegiatan</label>
-                        <select id="ws-status" style="background:rgba(255,255,255,.15); color:#fff; border:1.5px solid rgba(255,255,255,.4); border-radius:8px; padding:7px 12px; font-size:13px; font-weight:700; margin:0; width:auto;">
+                        <select id="ws-status" class="ws-select">
                             <option value="Belum Dimulai">📋 Belum Dimulai</option>
                             <option value="Sedang Dikerjakan">⚡ Sedang Dikerjakan</option>
                             <option value="Tertunda">⏳ Tertunda</option>
                             <option value="Selesai">✅ Selesai</option>
                         </select>
-                        <select id="ws-fase" style="background:rgba(255,255,255,.1); color:#fff; border:1.5px solid rgba(255,255,255,.3); border-radius:8px; padding:7px 12px; font-size:12px; font-weight:600; margin:0; width:auto; margin-left:6px;">
+                        <select id="ws-fase" class="ws-select">
                             <option value="Perencanaan">📋 Perencanaan</option>
                             <option value="Pelaksanaan">⚡ Pelaksanaan</option>
                             <option value="Pelaporan">📝 Pelaporan</option>
@@ -259,10 +259,10 @@
             </div>
 
             <!-- Grid 2 kolom: Logbook | Bukti Dukung -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0; border:1px solid var(--border); border-top:0; border-radius:0 0 var(--radius) var(--radius); overflow:hidden;">
+            <div class="realisasi-grid">
 
                 <!-- Kolom Logbook -->
-                <div style="padding:20px; border-right:1px solid var(--border); background:#fff;">
+                <div class="realisasi-col-logbook">
                     <h3 style="margin:0 0 4px; font-size:15px; color:var(--primary);">📝 Catatan Progres Harian</h3>
                     <p style="font-size:12px; color:var(--text-muted); margin:0 0 16px;">Catat apa yang dikerjakan hari ini.</p>
 
@@ -280,7 +280,7 @@
                 </div>
 
                 <!-- Kolom Bukti Dukung -->
-                <div style="padding:20px; background:#fafafa;">
+                <div class="realisasi-col-bukti">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                         <h3 style="margin:0; font-size:15px; color:var(--primary);">📎 Dokumen Bukti Dukung</h3>
                         <button id="btn-buka-drive" class="btn btn-secondary btn-sm">📁 Buka GDrive</button>
@@ -321,7 +321,7 @@
     <!-- ════════════════════════ TAB 4: REPORT -->
     <div id="tab-report" class="tab-content">
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start;">
+        <div class="report-grid">
 
             <!-- Form Generate -->
             <div class="card">

@@ -2,6 +2,8 @@
 
 /* ============================================================
    DESIGN SYSTEM — Superapp KPI v2.0
+   Desktop: identik dengan versi awal
+   Mobile:  media queries di bagian bawah
    ============================================================ */
 :root {
   --primary:        #1E3A8A;
@@ -92,7 +94,6 @@ body {
 .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 .tab-content { display: none; animation: fadeIn .2s ease; }
 .tab-content.active { display: block; }
-
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ============================================================ CARDS */
@@ -109,8 +110,91 @@ body {
   margin-bottom: 16px; padding-bottom: 14px;
   border-bottom: 1px solid var(--border-light);
 }
-.card-title { font-size: 15px; font-weight: 700; margin: 0; color: var(--text); }
+.card-title    { font-size: 15px; font-weight: 700; margin: 0; color: var(--text); }
 .card-subtitle { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; }
+
+/* ============================================================ DASHBOARD GRID CLASSES */
+/* Desktop: layout asli dipertahankan */
+.dash-grid-main {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.dash-grid-main > div,
+.target-grid > div,
+.realisasi-grid > div,
+.report-grid > div {
+  min-width: 0; /* Cegah overflow keluar grid */
+  overflow: hidden; /* Potong konten yang melebihi kolom */
+}
+.target-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  align-items: start;
+}
+.realisasi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+.realisasi-grid > div:first-child {
+  padding: 20px;
+  border-right: 1px solid var(--border);
+  background: #fff;
+}
+.realisasi-grid > div:last-child {
+  padding: 20px;
+  background: #fafafa;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+/* Cegah kolom kanan overflow keluar frame */
+.report-grid > div {
+  min-width: 0;
+}
+
+/* ============================================================ WORKSPACE HEADER */
+.ws-header {
+  background: linear-gradient(to right, #1e2d5e, #1e3a8a);
+  color: #fff;
+  padding: 18px 24px;
+}
+.ws-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ws-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ws-select {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.4);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
 
 /* ============================================================ BUTTONS */
 .btn {
@@ -122,15 +206,15 @@ body {
 }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 .btn-primary   { background: var(--primary); color: #fff; }
-.btn-primary:hover:not(:disabled)  { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.35); }
+.btn-primary:hover:not(:disabled)   { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.35); }
 .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover:not(:disabled){ background: var(--border-light); }
+.btn-secondary:hover:not(:disabled) { background: var(--border-light); }
 .btn-success   { background: var(--success); color: #fff; }
-.btn-success:hover:not(:disabled)  { background: #059669; transform: translateY(-1px); }
+.btn-success:hover:not(:disabled)   { background: #059669; transform: translateY(-1px); }
 .btn-danger    { background: var(--danger); color: #fff; }
-.btn-danger:hover:not(:disabled)   { background: #dc2626; }
-.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
-.btn-xs { padding: 4px 10px; font-size: 11px; border-radius: 5px; }
+.btn-danger:hover:not(:disabled)    { background: #dc2626; }
+.btn-sm  { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+.btn-xs  { padding: 4px 10px; font-size: 11px; border-radius: 5px; }
 .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
 .btn-outline:hover:not(:disabled) { background: var(--info-bg); }
 .btn-ghost { background: transparent; color: var(--text-muted); border: none; }
@@ -160,14 +244,11 @@ input:focus, select:focus, textarea:focus {
 }
 input.error, select.error, textarea.error { border-color: var(--danger); }
 textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
-.form-row { display: grid; gap: 14px; }
+.form-row   { display: grid; gap: 14px; }
 .form-row-2 { grid-template-columns: 1fr 1fr; }
 .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
 .form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-@media (max-width: 640px) {
-  .form-row-2, .form-row-3, .form-row-4 { grid-template-columns: 1fr; }
-}
-.form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.form-hint   { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 .field-error { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; }
 .field-error.show { display: block; }
 
@@ -177,16 +258,13 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
   padding: 3px 9px; border-radius: 20px;
   font-size: 11px; font-weight: 600; white-space: nowrap;
 }
-/* ── Status Kanban badges ── */
-.badge-persiapan   { background: #f1f5f9; color: #475569; }        /* Belum Dimulai */
-.badge-pelaksanaan { background: #dbeafe; color: #1d4ed8; }        /* Sedang Dikerjakan */
-.badge-monev       { background: #fef3c7; color: #b45309; }        /* Tertunda */
+.badge-persiapan   { background: #f1f5f9; color: #475569; }
+.badge-pelaksanaan { background: #dbeafe; color: #1d4ed8; }
+.badge-monev       { background: #fef3c7; color: #b45309; }
 .badge-selesai     { background: var(--success-bg); color: #065f46; }
 .badge-batal       { background: var(--danger-bg); color: #991b1b; }
 .badge-kpi         { background: var(--info-bg); color: var(--primary); }
 .badge-overdue     { background: var(--danger-bg); color: #991b1b; }
-
-/* ── Fase Proyek badges ── */
 .badge-perencanaan { background: #e0f2fe; color: #0369a1; }
 .badge-pelaks      { background: #dcfce7; color: #166534; }
 .badge-pelaporan   { background: #fef9c3; color: #854d0e; }
@@ -202,24 +280,13 @@ tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: #f8fafc; }
 .td-actions { display: flex; gap: 6px; align-items: center; }
 
-/* ============================================================ DASHBOARD COMPONENTS */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px; }
-.kpi-card {
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  padding: 16px;
-  text-align: center;
-}
-.kpi-card .kpi-num { font-size: 32px; font-weight: 700; font-family: 'Fraunces', serif; color: var(--primary); line-height: 1; }
-.kpi-card .kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-
-.progress-bar { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; }
+/* ============================================================ PROGRESS BAR */
+.progress-bar  { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
-.progress-fill.low    { background: var(--danger); }
-.progress-fill.mid    { background: var(--warning); }
-.progress-fill.high   { background: var(--secondary); }
-.progress-fill.full   { background: var(--success); }
+.progress-fill.low  { background: var(--danger); }
+.progress-fill.mid  { background: var(--warning); }
+.progress-fill.high { background: var(--secondary); }
+.progress-fill.full { background: var(--success); }
 
 /* ============================================================ TODO LIST */
 .todo-item {
@@ -269,8 +336,7 @@ tbody tr:hover { background: #f8fafc; }
 .timeline { border-left: 2px solid var(--border); padding-left: 18px; }
 .timeline-item { position: relative; margin-bottom: 18px; }
 .timeline-item::before {
-  content: '';
-  position: absolute; left: -24px; top: 4px;
+  content: ''; position: absolute; left: -24px; top: 4px;
   width: 10px; height: 10px;
   background: var(--primary-light); border-radius: 50%;
   border: 2px solid #fff; box-shadow: 0 0 0 2px var(--primary-light);
@@ -290,15 +356,24 @@ tbody tr:hover { background: #f8fafc; }
 .bukti-item:hover { box-shadow: var(--shadow); }
 .bukti-thumb {
   width: 52px; height: 52px; border-radius: 6px; flex-shrink: 0;
-  object-fit: cover; background: var(--info-bg);
+  background: var(--info-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 22px; border: 1px solid var(--border);
 }
 .bukti-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-.bukti-info { flex: 1; min-width: 0; }
-.bukti-name { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bukti-link { font-size: 11px; color: var(--secondary); text-decoration: none; }
+.bukti-info  { flex: 1; min-width: 0; }
+.bukti-name  { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bukti-link  { font-size: 11px; color: var(--secondary); text-decoration: none; }
 .bukti-link:hover { text-decoration: underline; }
+
+/* ============================================================ LAPORAN TERSIMPAN */
+/* Cegah judul laporan panjang meluber keluar card */
+#saved-reports > div { overflow: hidden; }
+#saved-reports .laporan-judul {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ============================================================ LAPORAN VIEW (A4) */
 .laporan-wrap { background: #cbd5e1; min-height: 100vh; padding: 30px 20px; }
@@ -328,6 +403,10 @@ tbody tr:hover { background: #f8fafc; }
 }
 .tl-date { font-weight: 700; color: #0f172a; font-size: 13px; margin-bottom: 4px; }
 .tl-desc { color: #334155; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+.summary-card .num { font-size: 24px; font-weight: 700; color: #1e3a8a; }
+.summary-card .lbl { font-size: 11px; color: #64748b; margin-top: 3px; }
 
 /* ============================================================ TOAST */
 #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
@@ -344,8 +423,8 @@ tbody tr:hover { background: #f8fafc; }
 .toast.error   { background: #991b1b; }
 .toast.warning { background: #92400e; }
 .toast-icon    { font-size: 16px; flex-shrink: 0; }
-@keyframes slideIn  { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-@keyframes fadeOut  { to { opacity: 0; transform: translateX(20px); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(20px); } }
 
 /* ============================================================ MODAL */
 #modal-overlay {
@@ -363,22 +442,20 @@ tbody tr:hover { background: #f8fafc; }
 @keyframes modalIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff;
 }
-.modal-title { font-weight: 700; font-size: 16px; margin: 0; }
-.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 4px; border-radius: 4px; }
+.modal-title  { font-weight: 700; font-size: 16px; margin: 0; }
+.modal-close  { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 4px; border-radius: 4px; }
 .modal-close:hover { background: var(--border-light); }
-.modal-body { padding: 22px; }
+.modal-body   { padding: 22px; }
 
 /* ============================================================ EMPTY STATE */
-.empty-state {
-  text-align: center; padding: 40px 20px;
-  color: var(--text-muted);
-}
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
 .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .5; }
 .empty-state p { font-size: 13px; margin: 0; }
 
-/* ============================================================ SKELETON LOADING */
+/* ============================================================ SKELETON */
 .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200%; animation: skeleton-wave 1.5s infinite; border-radius: 4px; }
 @keyframes skeleton-wave { to { background-position: -200% 0; } }
 
@@ -390,7 +467,7 @@ tbody tr:hover { background: #f8fafc; }
 .login-logo p  { font-size: 13px; color: var(--text-muted); margin: 5px 0 0; }
 
 /* ============================================================ UTILS */
-.text-center { text-align: center; }
+.text-center  { text-align: center; }
 .text-muted   { color: var(--text-muted); }
 .text-small   { font-size: 12px; }
 .text-success { color: var(--success); }
@@ -407,13 +484,115 @@ tbody tr:hover { background: #f8fafc; }
 .w-full { width: 100%; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-@media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
-/* Print styles */
+/* ============================================================ PRINT */
 @media print {
   body { background: #fff; }
   .laporan-wrap { background: #fff; padding: 0; }
   .kertas-a4 { box-shadow: none; max-width: 100%; padding: 20mm; border-radius: 0; }
   .no-print { display: none !important; }
   iframe { page-break-inside: avoid; }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE & TABLET
+   Hanya override yang diperlukan. Desktop di atas tidak berubah.
+   Breakpoint: 768px (tablet/hp landscape), 480px (hp portrait)
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* Topbar: sembunyikan tanggal, kecilkan gap */
+  .topbar { padding: 0 14px; gap: 8px; }
+  .topbar-date { display: none; }
+  .topbar-brand h1 { font-size: 15px; }
+  .topbar-brand span { display: none; }
+  .topbar-right { gap: 6px; }
+  .topbar-right .btn-outline { padding: 5px 10px; font-size: 11px; }
+
+  /* Tab nav: lebih kecil */
+  .tab-nav { padding: 0 8px; top: 52px; }
+  .tab-btn { padding: 10px 12px; font-size: 12px; gap: 4px; }
+
+  /* Page wrap: padding lebih kecil */
+  .page-wrap { padding: 12px; }
+
+  /* ── Dashboard: 2 kolom → 1 kolom ── */
+  .dash-grid-main {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ── Target tab: 2 kolom → 1 kolom ── */
+  .target-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ── Realisasi workspace: 2 kolom → 1 kolom ── */
+  .realisasi-grid {
+    grid-template-columns: 1fr;
+  }
+  .realisasi-grid > div:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px;
+  }
+  .realisasi-grid > div:last-child {
+    padding: 14px;
+  }
+
+  /* Workspace header: wrap controls ke bawah */
+  .ws-header { padding: 12px 14px; }
+  .ws-header-inner { flex-direction: column; gap: 10px; }
+  .ws-controls { width: 100%; }
+  .ws-select { font-size: 12px; padding: 6px 10px; }
+
+  /* ── Report tab: fixed+1fr → 1 kolom ── */
+  .report-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Form row: 2-3 kolom → 1 kolom */
+  .form-row-2 { grid-template-columns: 1fr; }
+  .form-row-3 { grid-template-columns: 1fr; }
+  .form-row-4 { grid-template-columns: 1fr 1fr; }
+
+  /* Card padding kecil */
+  .card { padding: 14px; margin-bottom: 12px; }
+
+  /* Modal lebih kecil */
+  .modal-box { max-width: 100%; }
+  .modal-body { padding: 14px 16px; }
+  .modal-header { padding: 14px 16px; }
+
+  /* Toast: full width di mobile */
+  #toast-container { top: 10px; right: 10px; left: 10px; }
+  .toast { min-width: auto; max-width: 100%; }
+
+  /* Laporan view */
+  .laporan-wrap { padding: 12px 8px; }
+  .kertas-a4 { padding: 20px; }
+  .summary-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Grid utilities */
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+
+  /* Input: font 16px cegah auto-zoom di iOS */
+  input[type=text], input[type=email], input[type=password],
+  input[type=number], input[type=date], input[type=url],
+  select, textarea { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+  /* Hp kecil: lebih compact lagi */
+  .topbar { height: 52px; }
+  .tab-btn { padding: 9px 10px; font-size: 11px; }
+  .kanban-col { flex: 0 0 150px; }
+  .topbar-right .btn-outline .btn-text { display: none; }
+  .login-card { padding: 24px 18px; }
+  .kertas-a4 { padding: 16px; }
+  .kop-surat h1 { font-size: 14px; }
+  .meta-tabel td { font-size: 12px; padding: 6px 8px; }
 }

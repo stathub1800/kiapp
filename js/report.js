@@ -258,21 +258,22 @@ async function loadSavedReports() {
         const tglBuat  = r.created_at
             ? new Date(r.created_at).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' })
             : '-';
+        const judul    = r.judul || r.nama_kpi || '-';
         return `
         <div style="display:flex; align-items:center; justify-content:space-between;
-                    padding:14px; border:1px solid var(--border); border-radius:10px;
-                    margin-bottom:10px; background:#fff; gap:10px;">
-            <div style="min-width:0; flex:1;">
-                <div style="font-weight:700; font-size:13px; color:var(--text);
+                    padding:12px 14px; border:1px solid var(--border); border-radius:10px;
+                    margin-bottom:10px; background:#fff; gap:10px; min-width:0;">
+            <div style="min-width:0; flex:1; overflow:hidden;">
+                <div class="laporan-judul" style="font-weight:700; font-size:13px; color:var(--text);
                             white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-                     title="${escAttr(r.judul || r.nama_kpi)}">
-                    ${r.judul || r.nama_kpi}
+                     title="${escAttr(judul)}">
+                    ${judul}
                 </div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">
+                <div style="font-size:11px; color:var(--text-muted); margin-top:3px; white-space:nowrap;">
                     ${periode} · Dibuat ${tglBuat}
                 </div>
             </div>
-            <div style="display:flex; gap:6px; flex-shrink:0;">
+            <div style="display:flex; gap:6px; flex-shrink:0; align-items:center;">
                 <button class="btn btn-secondary btn-xs" onclick="copyToClipboard('${url}')">Salin</button>
                 <a href="${url}" target="_blank" class="btn btn-primary btn-xs">Buka ↗</a>
                 <button class="btn btn-danger btn-xs" onclick="hapusLaporan('${r.id}')">×</button>
