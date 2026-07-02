@@ -11,15 +11,9 @@ async function loadReportTab() {
     await loadSavedReports();
 }
 
-// ── LOAD DROPDOWN (selalu fresh) ──
+// ── LOAD DROPDOWN (dari cache bersama — hemat Supabase) ──
 async function loadReportDropdowns() {
-    const [{ data: tri, error: e1 }, { data: kpi, error: e2 }] = await Promise.all([
-        supabase.from('triwulan').select('*').order('tahun').order('periode'),
-        supabase.from('rencana_kerja_kipapp').select('*').order('kode')
-    ]);
-
-    if (e1) console.error('[report] triwulan error:', e1.message);
-    if (e2) console.error('[report] kpi error:', e2.message);
+    const [tri, kpi] = await Promise.all([AppCache.getTriwulan(), AppCache.getKpi()]);
 
     _triwulanForReport = tri || [];
     _kpiForReport      = kpi || [];
@@ -43,10 +37,7 @@ async function loadReportDropdowns() {
     }
 }
 
-// ── HELPER: escape attribute ──
-function escAttr(s) {
-    return (s||'').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
+// escAttr() sekarang di ui.js (dipakai lintas modul)
 
 // ── GENERATE LAPORAN ──
 document.addEventListener('DOMContentLoaded', () => {
@@ -226,7 +217,9 @@ function renderSuccess(shareUrl, judul, jmlKegiatan, jmlLog, jmlBukti) {
     </div>`;
 }
 
-// ── DAFTAR LAPORAN TERSIMPAN ──
+// ── DAFTAR LAPORAN TERSIMPAN (dengan pencarian client-side) ──
+let _savedReports = [];
+
 async function loadSavedReports() {
     const container = document.getElementById('saved-reports');
     if (!container) return;
@@ -242,11 +235,35 @@ async function loadSavedReports() {
         return;
     }
 
-    if (!data || !data.length) {
+    _savedReports = data || [];
+
+    // Pasang listener search sekali
+    const searchEl = document.getElementById('cari-laporan');
+    if (searchEl && !searchEl._bound) {
+        searchEl._bound = true;
+        searchEl.addEventListener('input', debounce(renderSavedReports, 200));
+    }
+
+    renderSavedReports();
+}
+
+function renderSavedReports() {
+    const container = document.getElementById('saved-reports');
+    if (!container) return;
+
+    const q = (document.getElementById('cari-laporan')?.value || '').trim().toLowerCase();
+    let data = _savedReports;
+    if (q) {
+        data = data.filter(r => {
+            const periode = r.triwulan ? `${r.triwulan.nama} ${r.triwulan.tahun}` : 'Tahunan';
+            return `${r.judul || ''} ${r.nama_kpi || ''} ${periode}`.toLowerCase().includes(q);
+        });
+    }
+
+    if (!data.length) {
         container.innerHTML = `<div class="empty-state">
             <div class="empty-icon">📄</div>
-            <p>Belum ada laporan yang dibuat.<br>
-            <span style="font-size:11px;">Pilih KPI & Triwulan lalu klik Generate.</span></p>
+            <p>${_savedReports.length ? 'Tidak ada laporan yang cocok dengan pencarian.' : 'Belum ada laporan yang dibuat.<br><span style="font-size:11px;">Pilih KPI & Triwulan lalu klik Generate.</span>'}</p>
         </div>`;
         return;
     }

@@ -48,6 +48,28 @@ function openModal(title, bodyHtml, maxWidth) {
 function closeModal() {
     document.getElementById('modal-overlay').classList.remove('open');
     document.body.style.overflow = '';
+    // Jika ada confirmDialog yang masih menunggu (mis. ditutup lewat
+    // klik overlay / tombol ×), anggap jawabannya "Batal" agar promise
+    // tidak menggantung selamanya.
+    if (typeof window._confirmResolve === 'function') {
+        const r = window._confirmResolve;
+        window._confirmResolve = null;
+        r(false);
+    }
+}
+
+// ── DEBOUNCE (untuk input pencarian) ──
+function debounce(fn, wait = 250) {
+    let t;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+// ── ESCAPE ATTRIBUTE (dipakai lintas modul) ──
+function escAttr(s) {
+    return (s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ── BADGE STATUS KANBAN ──
@@ -78,15 +100,21 @@ function renderFaseBadge(fase) {
 // ── CONFIRM DIALOG ──
 function confirmDialog(msg) {
     return new Promise(resolve => {
+        window._confirmResolve = resolve;
         openModal('Konfirmasi', `
             <p style="font-size:14px; color:var(--text); margin:0 0 20px;">${msg}</p>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button class="btn btn-secondary" onclick="closeModal(); window._confirmResolve(false)">Batal</button>
-                <button class="btn btn-danger"    onclick="closeModal(); window._confirmResolve(true)">Hapus</button>
+                <button class="btn btn-secondary" onclick="window._confirmAnswer(false)">Batal</button>
+                <button class="btn btn-danger"    onclick="window._confirmAnswer(true)">Ya, Lanjutkan</button>
             </div>`, '420px');
-        window._confirmResolve = resolve;
     });
 }
+window._confirmAnswer = function (val) {
+    const r = window._confirmResolve;
+    window._confirmResolve = null;   // cegah closeModal me-resolve ulang
+    closeModal();
+    if (typeof r === 'function') r(val);
+};
 
 // ── SKELETON LOADER ──
 function skeletonRows(n = 3, cols = 4) {

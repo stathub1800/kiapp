@@ -29,4 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId) openTab(tabId, this);
         });
     });
+
+    // ── SHORTCUT KEYBOARD ──
+    // Tekan "/" di mana saja → fokus ke kotak pencarian tab aktif
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== '/') return;
+        const tag = (document.activeElement?.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        const active = document.querySelector('.tab-content.active');
+        const search = active?.querySelector('input[type="search"], .filter-search');
+        if (search) { e.preventDefault(); search.focus(); search.select(); }
+    });
 });

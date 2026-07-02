@@ -53,7 +53,7 @@
                 <div class="card" style="padding:16px;">
                     <div class="card-header">
                         <span class="card-title">📊 Capaian Kinerja</span>
-                        <button class="btn btn-ghost btn-xs" onclick="loadDashboard()">↺ Refresh</button>
+                        <button class="btn btn-ghost btn-xs" onclick="loadDashboard(true)">↺ Refresh</button>
                     </div>
                     <div id="dash-kpi-summary">
                         <div class="skeleton" style="height:120px; border-radius:8px; margin-bottom:12px;"></div>
@@ -189,9 +189,65 @@
             <!-- Daftar Target -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">📋 Semua Target</div>
-                    <button class="btn btn-ghost btn-xs" onclick="loadDaftarTarget()">↺ Refresh</button>
+                    <div>
+                        <div class="card-title">📋 Semua Target & Arsip</div>
+                        <div class="card-subtitle" id="tf-count">Memuat...</div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button id="tf-export" class="btn btn-secondary btn-xs" title="Export hasil filter ke CSV (Excel)">⬇ CSV</button>
+                        <button class="btn btn-ghost btn-xs" onclick="loadDaftarTarget(true)" title="Ambil ulang data dari server">↺ Refresh</button>
+                    </div>
                 </div>
+
+                <!-- ── TOOLBAR FILTER & SEARCH ── -->
+                <div class="filter-toolbar">
+                    <input type="search" id="tf-search" class="filter-search"
+                           placeholder="🔍 Cari nama, deskripsi, KPI...  (tekan / )">
+
+                    <div class="chip-row" id="tf-chips">
+                        <button type="button" class="chip active" data-status="Aktif">⚡ Aktif</button>
+                        <button type="button" class="chip" data-status="Selesai">✅ Selesai</button>
+                        <button type="button" class="chip" data-status="Batal">🗄 Batal</button>
+                        <button type="button" class="chip" data-status="Semua">Semua</button>
+                    </div>
+
+                    <div class="filter-selects">
+                        <select id="tf-jenis" title="Filter jenis pekerjaan">
+                            <option value="">Semua Jenis</option>
+                            <option value="KPI Utama">KPI Utama</option>
+                            <option value="Tugas Rutin">Tugas Rutin</option>
+                            <option value="Tambahan">Tambahan</option>
+                            <option value="Inovasi">Inovasi</option>
+                        </select>
+                        <select id="tf-fase" title="Filter fase proyek">
+                            <option value="">Semua Fase</option>
+                            <option value="Perencanaan">Perencanaan</option>
+                            <option value="Pelaksanaan">Pelaksanaan</option>
+                            <option value="Pelaporan">Pelaporan</option>
+                            <option value="Evaluasi">Evaluasi</option>
+                        </select>
+                        <select id="tf-triwulan" title="Filter triwulan">
+                            <option value="">Semua Triwulan</option>
+                        </select>
+                        <select id="tf-kpi" title="Filter KPI">
+                            <option value="">Semua KPI</option>
+                        </select>
+                        <select id="tf-sort" title="Urutkan">
+                            <option value="deadline">↕ Deadline terdekat</option>
+                            <option value="nama">↕ Nama (A–Z)</option>
+                            <option value="status">↕ Status</option>
+                            <option value="terbaru">↕ Terbaru dibuat</option>
+                        </select>
+                        <select id="tf-group" title="Kelompokkan (arsip tertata)">
+                            <option value="">Tanpa Grup</option>
+                            <option value="triwulan">📂 Grup: Triwulan</option>
+                            <option value="kpi">📂 Grup: KPI</option>
+                            <option value="jenis">📂 Grup: Jenis</option>
+                        </select>
+                        <button type="button" id="tf-reset" class="btn btn-ghost btn-xs" title="Reset semua filter">✕ Reset</button>
+                    </div>
+                </div>
+
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -219,14 +275,22 @@
 
         <!-- Dropdown pilih kegiatan -->
         <div class="card" style="margin-bottom:0; border-radius:var(--radius) var(--radius) 0 0; border-bottom:0;">
-            <div style="display:flex; align-items:center; gap:14px;">
-                <div style="flex:1;">
-                    <label style="margin-bottom:6px;">Pilih Pekerjaan yang Akan Diupdate</label>
+            <div style="display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:220px;">
+                    <label style="margin-bottom:6px;">Cari & Pilih Pekerjaan yang Akan Diupdate</label>
+                    <input type="search" id="cari-realisasi" class="filter-search"
+                           placeholder="🔍 Ketik untuk menyaring daftar pekerjaan..." style="margin-bottom:8px;">
                     <select id="pilih-realisasi" style="margin:0;">
                         <option value="">-- Pilih pekerjaan untuk diupdate --</option>
                     </select>
                 </div>
-                <button class="btn btn-secondary btn-sm" style="margin-top:20px;" onclick="loadRealisasiDropdown()">↺</button>
+                <div style="display:flex; flex-direction:column; gap:8px; padding-bottom:2px;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; margin:0;">
+                        <input type="checkbox" id="rf-hide-selesai" style="width:auto; margin:0;">
+                        Sembunyikan yang Selesai
+                    </label>
+                    <button class="btn btn-secondary btn-sm" onclick="loadRealisasiDropdown(true)">↺ Refresh</button>
+                </div>
             </div>
         </div>
 
@@ -358,6 +422,8 @@
                     <div class="card-title">📄 Laporan Tersimpan</div>
                     <button class="btn btn-ghost btn-xs" onclick="loadSavedReports()">↺ Refresh</button>
                 </div>
+                <input type="search" id="cari-laporan" class="filter-search"
+                       placeholder="🔍 Cari judul laporan / KPI / periode..." style="margin-bottom:12px;">
                 <div id="saved-reports">
                     <div class="empty-state"><div class="empty-icon">📄</div><p>Belum ada laporan.</p></div>
                 </div>
@@ -373,6 +439,7 @@
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/cache.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/target.js"></script>
 <script src="js/realisasi.js"></script>

@@ -6,15 +6,10 @@ let _calInstance = null;
 let _allKegiatan = [];
 
 // ── ENTRY POINT ──
-async function loadDashboard() {
-    const { data, error } = await supabase
-        .from('kegiatan')
-        .select('*, triwulan(nama, periode)')
-        .neq('status', 'Batal')
-        .order('waktu_selesai', { ascending: true });
-
-    if (error) { showToast('Gagal memuat data: ' + error.message, 'error'); return; }
-    _allKegiatan = data || [];
+// force=true dipakai tombol Refresh; default pakai cache bersama (hemat Supabase)
+async function loadDashboard(force = false) {
+    const all = await AppCache.getKegiatan(force === true);
+    _allKegiatan = (all || []).filter(k => k.status !== 'Batal');
 
     renderKPISummary(_allKegiatan);
     renderTodoDashboard(_allKegiatan);
@@ -193,15 +188,25 @@ function renderKalender(data) {
 
 // ── NAVIGASI KE WORKSPACE ──
 function bukaWorkspaceKegiatan(id) {
-    // Switch ke tab realisasi dan pilih kegiatan
+    // Pindah ke tab Realisasi
     const tabBtn = document.querySelector('[data-tab="tab-realisasi"]');
     if (tabBtn) tabBtn.click();
-    // Set dropdown value setelah tab terbuka
-    setTimeout(() => {
+
+    // Pilih kegiatan setelah dropdown siap (retry sampai option muncul)
+    let attempts = 0;
+    const trySelect = () => {
         const ddl = document.getElementById('pilih-realisasi');
-        if (ddl) {
+        const ada = ddl && ddl.querySelector(`option[value="${id}"]`);
+        if (ada) {
             ddl.value = id;
             ddl.dispatchEvent(new Event('change'));
+        } else if (attempts++ < 20) {
+            setTimeout(trySelect, 150);
+        } else {
+            // Kemungkinan tersaring (mis. "Sembunyikan Selesai" aktif) —
+            // buka langsung workspace-nya
+            if (typeof openWorkspace === 'function') openWorkspace(id);
         }
-    }, 100);
+    };
+    trySelect();
 }

@@ -1,5 +1,47 @@
-# Superapp KPI v2.0
+# Superapp KPI v2.1
 **Sistem Manajemen Kinerja Personal — BPS Provinsi Lampung**
+
+## 🆕 BARU DI v2.1
+
+### 1. Cache Data Bersama (`js/cache.js`) — hemat kuota Supabase
+- Satu kali fetch `kegiatan` / `triwulan` / `KPI` dipakai bersama SEMUA tab.
+- Pindah-pindah tab TIDAK lagi memicu query baru (TTL kegiatan 1 menit, master data 30 menit).
+- Perubahan status/fase langsung "di-patch" ke cache tanpa re-fetch.
+- Tombol ↺ Refresh = paksa ambil data terbaru dari server.
+
+### 2. Filter & Pencarian di Tab Input Target
+- 🔍 Kotak pencarian bebas (nama, deskripsi, KPI, satuan) — shortcut keyboard `/`
+- Chip status: **Aktif · Selesai · Batal · Semua** (mode arsip)
+- Filter: Jenis Pekerjaan, Fase, Triwulan, KPI
+- Sortir: deadline / nama / status / terbaru
+- **Group-by** Triwulan / KPI / Jenis → arsip tertata dengan header grup + statistik
+- Semua filter berjalan di sisi klien = NOL query tambahan ke Supabase
+
+### 3. Mode Arsip
+- Kegiatan **Batal** tidak hilang: bisa dilihat via chip "Batal", **dipulihkan**, atau dihapus permanen.
+- Kegiatan **Selesai** tersimpan rapi via chip "Selesai" + group-by triwulan.
+
+### 4. Export CSV
+- Tombol ⬇ CSV mengekspor HASIL FILTER saat itu (pemisah `;` + BOM UTF-8, langsung rapi di Excel Indonesia).
+
+### 5. Tab Realisasi
+- Kotak pencarian untuk menyaring dropdown pekerjaan.
+- Checkbox "Sembunyikan yang Selesai".
+- Navigasi dari Dashboard → Workspace kini andal (tidak lagi gagal saat data belum termuat).
+
+### 6. Tab Report
+- Pencarian di daftar Laporan Tersimpan.
+
+### 7. Perbaikan Bug
+- `confirmDialog` tidak lagi menggantung jika modal ditutup lewat klik overlay.
+- Auto-advance status hemat 2 query per catatan logbook.
+- `escAttr` & `debounce` jadi helper global di `ui.js`.
+
+> **Tidak ada perubahan skema database** — TIDAK perlu menjalankan ulang SETUP_DATABASE.sql.
+> Cukup timpa file HTML/CSS/JS di GitHub Pages.
+
+---
+
 
 ---
 
@@ -60,6 +102,7 @@ Masukkan email Anda → Cek email → Set password
 │   └── style.css       → Design system lengkap
 └── js/
     ├── config.js       → Konfigurasi (URL, KEY, konstanta)
+    ├── cache.js        → Cache data bersama (hemat Supabase) [BARU]
     ├── supabase.js     → Inisialisasi Supabase client
     ├── auth.js         → Login, logout, idle timer, session guard
     ├── ui.js           → Toast, modal, badge, helper

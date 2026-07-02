@@ -9,30 +9,57 @@ async function loadRealisasiTab() {
     await loadRealisasiDropdown();
 }
 
-// ── DROPDOWN PILIH KEGIATAN ──
-async function loadRealisasiDropdown() {
+// ── DROPDOWN PILIH KEGIATAN (dari cache + filter pencarian) ──
+let _realisasiData = [];
+
+async function loadRealisasiDropdown(force = false) {
     const ddl = document.getElementById('pilih-realisasi');
     if (!ddl) return;
 
-    const { data, error } = await supabase
-        .from('kegiatan')
-        .select('id, nama_kegiatan, status, waktu_selesai')
-        .neq('status', 'Batal')
-        .order('waktu_selesai', { ascending: true });
+    const all = await AppCache.getKegiatan(force === true);
+    _realisasiData = (all || []).filter(k => k.status !== 'Batal');
 
-    if (error) return;
-
-    const opts = (data || []).map(k => {
-        const dl = deadlineLabel(k.waktu_selesai);
-        return `<option value="${k.id}" data-status="${k.status}">[${k.status}] ${k.nama_kegiatan} — ${dl.label}</option>`;
-    });
-
-    ddl.innerHTML = '<option value="">-- Pilih pekerjaan untuk diupdate --</option>' + opts.join('');
+    renderRealisasiOptions();
 
     ddl.onchange = (e) => {
         if (e.target.value) openWorkspace(e.target.value);
         else closeWorkspace();
     };
+
+    // Pasang listener search sekali saja
+    const searchEl = document.getElementById('cari-realisasi');
+    if (searchEl && !searchEl._bound) {
+        searchEl._bound = true;
+        searchEl.addEventListener('input', debounce(renderRealisasiOptions, 200));
+    }
+    const hideSelesai = document.getElementById('rf-hide-selesai');
+    if (hideSelesai && !hideSelesai._bound) {
+        hideSelesai._bound = true;
+        hideSelesai.addEventListener('change', renderRealisasiOptions);
+    }
+}
+
+function renderRealisasiOptions() {
+    const ddl = document.getElementById('pilih-realisasi');
+    if (!ddl) return;
+    const cur = ddl.value;
+
+    const q          = (document.getElementById('cari-realisasi')?.value || '').trim().toLowerCase();
+    const hideSelesai = document.getElementById('rf-hide-selesai')?.checked;
+
+    let rows = _realisasiData;
+    if (hideSelesai) rows = rows.filter(k => k.status !== 'Selesai');
+    if (q) rows = rows.filter(k =>
+        `${k.nama_kegiatan} ${k.rencana_kerja_kipapp || ''} ${k.status}`.toLowerCase().includes(q));
+
+    const opts = rows.map(k => {
+        const dl = deadlineLabel(k.waktu_selesai);
+        return `<option value="${k.id}" data-status="${k.status}">[${k.status}] ${k.nama_kegiatan} — ${dl.label}</option>`;
+    });
+
+    ddl.innerHTML = `<option value="">-- ${rows.length} pekerjaan tersedia, pilih salah satu --</option>` + opts.join('');
+    // Pertahankan pilihan yang sedang terbuka jika masih ada di hasil filter
+    if (cur && rows.some(k => k.id === cur)) ddl.value = cur;
 }
 
 // ── BUKA WORKSPACE ──
@@ -59,15 +86,11 @@ function closeWorkspace() {
     if (panel) panel.style.display = 'none';
 }
 
-// ── HEADER WORKSPACE ──
+// ── HEADER WORKSPACE (dari cache — tanpa query tambahan) ──
 async function loadWorkspaceHeader(id) {
-    const { data: k, error } = await supabase
-        .from('kegiatan')
-        .select('*, triwulan(nama)')
-        .eq('id', id)
-        .single();
-
-    if (error || !k) return;
+    const all = await AppCache.getKegiatan();
+    const k   = (all || []).find(x => x.id === id);
+    if (!k) return;
 
     const titleEl = document.getElementById('ws-title');
     const metaEl  = document.getElementById('ws-meta');
@@ -81,7 +104,7 @@ async function loadWorkspaceHeader(id) {
             statusDdl.disabled = true;
             const { error: upErr } = await supabase.from('kegiatan').update({ status: e.target.value }).eq('id', id);
             if (upErr) { showToast('Gagal update status', 'error'); statusDdl.value = k.status; }
-            else { showToast(`Status → ${e.target.value}`, 'success'); }
+            else { AppCache.patchKegiatan(id, { status: e.target.value }); showToast(`Status → ${e.target.value}`, 'success'); }
             statusDdl.disabled = false;
         };
     }
@@ -94,7 +117,7 @@ async function loadWorkspaceHeader(id) {
             faseDdl.disabled = true;
             const { error: upErr } = await supabase.from('kegiatan').update({ fase_proyek: e.target.value }).eq('id', id);
             if (upErr) { showToast('Gagal update fase', 'error'); faseDdl.value = k.fase_proyek; }
-            else { showToast(`Fase → ${e.target.value}`, 'success'); }
+            else { AppCache.patchKegiatan(id, { fase_proyek: e.target.value }); showToast(`Fase → ${e.target.value}`, 'success'); }
             faseDdl.disabled = false;
         };
     }
@@ -189,33 +212,23 @@ function escHtml(str) {
 // Aturan: jika status masih "Persiapan" dan ini logbook pertama,
 // otomatis naik ke "Pelaksanaan" tanpa perlu user klik manual.
 async function autoAdvanceStatus(id) {
-    // Cek status kegiatan saat ini
-    const { data: keg } = await supabase
-        .from('kegiatan')
-        .select('status')
-        .eq('id', id)
-        .single();
+    // Cek status dari cache (hemat 1 query — cache selalu sinkron
+    // karena semua perubahan status lewat patchKegiatan)
+    const all = await AppCache.getKegiatan();
+    const keg = (all || []).find(k => k.id === id);
 
     if (!keg || keg.status !== 'Belum Dimulai') return; // hanya advance dari Belum Dimulai
 
-    // Hitung jumlah logbook yang sudah ada
-    const { count } = await supabase
-        .from('progres_harian')
-        .select('*', { count: 'exact', head: true })
-        .eq('kegiatan_id', id);
+    const { error } = await supabase
+        .from('kegiatan')
+        .update({ status: 'Sedang Dikerjakan' })
+        .eq('id', id);
 
-    // Jika ini logbook pertama (count = 1 setelah insert barusan)
-    if (count >= 1) {
-        const { error } = await supabase
-            .from('kegiatan')
-            .update({ status: 'Sedang Dikerjakan' })
-            .eq('id', id);
-
-        if (!error) {
-            // Update dropdown status di UI tanpa reload halaman
-            const statusDdl = document.getElementById('ws-status');
-            if (statusDdl) statusDdl.value = 'Sedang Dikerjakan';
-            showToast('Status otomatis → Sedang Dikerjakan ✓', 'success');
-        }
+    if (!error) {
+        AppCache.patchKegiatan(id, { status: 'Sedang Dikerjakan' });
+        // Update dropdown status di UI tanpa reload halaman
+        const statusDdl = document.getElementById('ws-status');
+        if (statusDdl) statusDdl.value = 'Sedang Dikerjakan';
+        showToast('Status otomatis → Sedang Dikerjakan ✓', 'success');
     }
 }

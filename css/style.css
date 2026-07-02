@@ -596,3 +596,88 @@ tbody tr:hover { background: #f8fafc; }
   .kop-surat h1 { font-size: 14px; }
   .meta-tabel td { font-size: 12px; padding: 6px 8px; }
 }
+/* ============================================================
+   v2.1 — FILTER TOOLBAR, CHIP, GRUP ARSIP
+   ============================================================ */
+.filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--border-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.filter-search {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  background: var(--bg-card);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.filter-search:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.chip:hover { border-color: var(--primary-light); color: var(--primary); }
+.chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.filter-selects {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+}
+.filter-selects select {
+  flex: 1 1 130px;
+  min-width: 120px;
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text);
+}
+.filter-selects .btn { flex: 0 0 auto; }
+
+/* Baris grup (group-by) */
+tr.group-row td {
+  background: #eef2ff;
+  border-top: 2px solid #c7d2fe;
+  padding: 8px 12px !important;
+}
+tr.group-row .group-name {
+  font-weight: 700; font-size: 13px; color: var(--primary);
+}
+tr.group-row .group-stat {
+  float: right; font-size: 11px; color: var(--text-muted); font-weight: 600;
+}
+
+/* Baris arsip Batal — diredupkan */
+tr.row-batal td { opacity: .55; }
+tr.row-batal:hover td { opacity: 1; }
+
+@media (max-width: 640px) {
+  .filter-selects select { flex: 1 1 45%; min-width: 0; }
+}
